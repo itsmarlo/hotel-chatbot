@@ -11,12 +11,14 @@ from uuid import uuid4
 from hotel_assistant.config import Settings
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.dialogue.state import BookingState, TurnLimitExceeded
+from hotel_assistant.ml.inference import TrainedNLP
 from hotel_assistant.rag.policies import PolicyRetriever
 from hotel_assistant.services.booking import BookingWorkflow
 from hotel_assistant.services.interpret import booking_changes, is_booking_request, language_of
 
 _ROOT = Path(__file__).resolve().parents[3]
 _CONFIRM = {"confirm booking", "buchung bestätigen", "confirmer la réservation"}
+_DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen", "ne pas réserver"}
 _PROMPTS = {
     "en": {
         "guest_name": "your name (for example, 'my name is Alex Kim')",
@@ -82,6 +84,15 @@ class ChatService:
             _ROOT / "data" / "knowledge_base" / "policies.json",
             semantic=self.retrieval_mode == "semantic",
         )
+        artifact_dir = _ROOT / "models" / "trained"
+        encoder = getattr(self.retriever, "_model", None)
+        self.nlp = (
+            TrainedNLP(artifact_dir, encoder)
+            if encoder is not None
+            and (artifact_dir / "intent.joblib").is_file()
+            and os.getenv("HOTEL_NLP_MODE", "trained") == "trained"
+            else None
+        )
         self.max_sessions = max_sessions
         self.session_ttl_seconds = session_ttl_seconds
         self._sessions: dict[str, _Session] = {}
@@ -136,7 +147,13 @@ class ChatService:
             "extracted_slots": {},
             "selected_route": "clarification",
             "sources": [],
+            "model_entities": {},
         }
+        if self.nlp is not None:
+            proposal = self.nlp.predict(message)
+            debug["detected_intent"] = proposal.intent
+            debug["confidence"] = round(proposal.confidence, 3)
+            debug["model_entities"] = proposal.entities
 
         def answer(text: str, route: str, intent: str) -> ChatResult:
             debug["selected_route"] = route
@@ -159,6 +176,51 @@ class ChatService:
                 "OTHER",
             )
 
+        if message.casefold() in _DECLINE:
+            state.reset()
+            session.workflow = BookingWorkflow(state, self.repository)
+            return answer(
+                "The unconfirmed booking request was discarded.", "booking_discarded", "BOOKING"
+            )
+
+        # Only clear intent predictions influence routing. Slot tags stay advisory because
+        # the tiny synthetic token dataset cannot safely authorize booking state updates.
+        if (
+            self.nlp is not None
+            and debug["confidence"] >= 0.7
+            and not any(value is not None for value in state.to_raw_dict().values())
+        ):
+            action_words = (
+                "cancel",
+                "call off",
+                "delete my booking",
+                "stornier",
+                "absagen",
+                "annul",
+                "modify",
+                "change my",
+                "update my",
+                "ändern",
+                "verschieben",
+                "modifier",
+                "changer",
+            )
+            if debug["detected_intent"] in {"CANCEL_BOOKING", "MODIFY_BOOKING"} and any(
+                word in message.casefold() for word in action_words
+            ):
+                return answer(
+                    "Existing reservations cannot be changed in this demo. "
+                    "Please contact the hotel.",
+                    "unsupported_reservation_change",
+                    str(debug["detected_intent"]),
+                )
+            if debug["detected_intent"] == "GREETING":
+                return answer(
+                    "Hello! I can help with room requests and hotel policies.",
+                    "greeting",
+                    "GREETING",
+                )
+
         if message.casefold() in _CONFIRM:
             try:
                 session.workflow.confirm(message)
@@ -171,8 +233,9 @@ class ChatService:
                 "de": "Buchung bestätigt. Referenz",
                 "fr": "Réservation confirmée. Référence",
             }[language]
-            return answer(f"{confirmation_text}: {reservation.reference}.",
-                          "booking_created", "BOOKING")
+            return answer(
+                f"{confirmation_text}: {reservation.reference}.", "booking_created", "BOOKING"
+            )
 
         try:
             changes = booking_changes(message)
@@ -207,8 +270,11 @@ class ChatService:
             missing = state.missing_required_fields()
             if missing:
                 prompt = _PROMPTS[language][missing[0]]
-                lead = {"en": "To continue, please provide", "de": "Bitte geben Sie an:",
-                        "fr": "Pour continuer, indiquez"}[language]
+                lead = {
+                    "en": "To continue, please provide",
+                    "de": "Bitte geben Sie an:",
+                    "fr": "Pour continuer, indiquez",
+                }[language]
                 return answer(f"{lead} {prompt}.", "clarification", "BOOKING")
             try:
                 rooms = session.workflow.search_rooms()

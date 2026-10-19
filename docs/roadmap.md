@@ -25,6 +25,8 @@ interface, then a single-prompt baseline and comparison.
 
 ## Phase 4: LLM interpretation and conversation controller
 
+- Done: reproducible multilingual intent baseline and BIO token classifier with fixed splits.
+- Done: the intent model runs in semantic mode; token predictions are advisory only.
 - Use Qwen2.5-1.5B-Instruct to propose intent, slots and tool calls in constrained JSON.
 - Cross-check extracted dates with a deterministic parser and clarify disagreements.
 - Done: deterministic router selects booking, policy knowledge, or clarification.

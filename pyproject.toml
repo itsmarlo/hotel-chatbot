@@ -24,18 +24,17 @@ dev = [
   "pytest-cov==7.0.0",
   "ruff==0.13.2",
 ]
-# Installed in later phases so Phase 1 remains lightweight.
 ml = [
-  "datasets==4.1.1",
-  "mlflow==3.4.0",
-  "pandas==2.3.3",
-  "scikit-learn==1.7.2",
-  "torch==2.8.0",
-  "transformers==4.56.2",
+  "faiss-cpu==1.15.1",
+  "sentence-transformers==6.1.0",
+  "scikit-learn==1.9.1",
+  "joblib==1.6.0",
 ]
 rag = [
   "faiss-cpu==1.15.1",
   "sentence-transformers==6.1.0",
+  "scikit-learn==1.9.1",
+  "joblib==1.6.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -61,3 +60,7 @@ follow_imports = "skip"
 disallow_subclassing_any = false
 disallow_untyped_decorators = false
 packages = ["hotel_assistant"]
+
+[[tool.mypy.overrides]]
+module = ["joblib.*", "sklearn.*"]
+ignore_missing_imports = true

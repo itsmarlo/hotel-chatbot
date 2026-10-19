@@ -1,0 +1,64 @@
+{
+  "intent": {
+    "model": "multilingual_c10.0",
+    "dev_macro_f1": {
+      "word_1_2": 0.7706349206349207,
+      "char_2_5": 0.715873015873016,
+      "multilingual_c0.1": 0.8277777777777778,
+      "multilingual_c1.0": 0.7706349206349206,
+      "multilingual_c10.0": 0.8277777777777778
+    },
+    "test_accuracy": 0.8333333333333334,
+    "test_macro_f1": 0.83015873015873,
+    "test_errors": [
+      {
+        "text": "Pouvez-vous faire une réservation",
+        "expected": "BOOKING",
+        "predicted": "CANCEL_BOOKING"
+      },
+      {
+        "text": "Je souhaite changer de chambre",
+        "expected": "MODIFY_BOOKING",
+        "predicted": "BOOKING"
+      },
+      {
+        "text": "Acceptez-vous les animaux",
+        "expected": "HOTEL_POLICY",
+        "predicted": "OTHER"
+      }
+    ],
+    "counts": {
+      "train": 66,
+      "dev": 18,
+      "test": 18
+    }
+  },
+  "slots": {
+    "model": "c0.1",
+    "dev_token_f1_without_o": {
+      "c0.1": 0.5,
+      "c1.0": 0.5,
+      "c10.0": 0.5
+    },
+    "test_token_f1_without_o": 0.631578947368421,
+    "test_tag_counts": {
+      "B-GUEST_NAME": 1,
+      "I-GUEST_NAME": 1,
+      "O": 9,
+      "B-ROOM_TYPE": 1,
+      "B-SPECIAL_REQUEST": 1,
+      "I-SPECIAL_REQUEST": 1,
+      "B-CHECKIN_DATE": 1,
+      "I-CHECKIN_DATE": 1,
+      "B-CHECKOUT_DATE": 1,
+      "I-CHECKOUT_DATE": 1,
+      "B-GUEST_COUNT": 1
+    },
+    "counts": {
+      "train": 6,
+      "dev": 2,
+      "test": 2
+    },
+    "limitation": "Token score on two synthetic dialogues; no entity-level generalization claim."
+  }
+}

@@ -13,5 +13,7 @@ htmlcov/
 data/synthetic/*.db
 models/*
 !models/.gitkeep
+!models/trained/
+!models/trained/*
 reports/*
 !reports/.gitkeep

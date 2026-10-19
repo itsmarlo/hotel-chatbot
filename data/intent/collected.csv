@@ -1,0 +1,73 @@
+text,intent,split,is_synthetic
+Reserve a room for next month,BOOKING,train,true
+I need accommodation for two nights,BOOKING,train,true
+Can you book me a suite,BOOKING,train,true
+I would like to stay at your hotel,BOOKING,dev,true
+Find a room for my family,BOOKING,test,true
+Ich möchte ein Zimmer buchen,BOOKING,train,true
+Haben Sie ein Doppelzimmer frei,BOOKING,train,true
+Reservieren Sie bitte eine Suite,BOOKING,dev,true
+Wir brauchen eine Unterkunft,BOOKING,test,true
+Je voudrais réserver une chambre,BOOKING,train,true
+Je cherche une suite pour deux nuits,BOOKING,dev,true
+Pouvez-vous faire une réservation,BOOKING,test,true
+Cancel my reservation please,CANCEL_BOOKING,train,true
+I want to cancel my stay,CANCEL_BOOKING,train,true
+Please delete my booking,CANCEL_BOOKING,train,true
+Can you cancel my room,CANCEL_BOOKING,dev,true
+I need to call off my reservation,CANCEL_BOOKING,test,true
+Ich möchte meine Buchung stornieren,CANCEL_BOOKING,train,true
+Bitte meine Reservierung absagen,CANCEL_BOOKING,train,true
+Können Sie mein Zimmer stornieren,CANCEL_BOOKING,dev,true
+Die Buchung soll entfallen,CANCEL_BOOKING,test,true
+Je veux annuler ma réservation,CANCEL_BOOKING,train,true
+Veuillez annuler ma chambre,CANCEL_BOOKING,dev,true
+Je ne viens plus annulez le séjour,CANCEL_BOOKING,test,true
+Move my booking to another date,MODIFY_BOOKING,train,true
+Change the guest count on my reservation,MODIFY_BOOKING,train,true
+Update my existing stay,MODIFY_BOOKING,train,true
+Can you change my room type,MODIFY_BOOKING,dev,true
+I need to amend my booking,MODIFY_BOOKING,test,true
+Ich möchte meine Buchung ändern,MODIFY_BOOKING,train,true
+Bitte das Anreisedatum verschieben,MODIFY_BOOKING,train,true
+Kann ich die Gästezahl ändern,MODIFY_BOOKING,dev,true
+Meine Reservierung muss angepasst werden,MODIFY_BOOKING,test,true
+Je veux modifier ma réservation,MODIFY_BOOKING,train,true
+Changez ma date d'arrivée,MODIFY_BOOKING,dev,true
+Je souhaite changer de chambre,MODIFY_BOOKING,test,true
+What time is check-out,HOTEL_POLICY,train,true
+Do you offer breakfast,HOTEL_POLICY,train,true
+Is parking available,HOTEL_POLICY,train,true
+What is your pet policy,HOTEL_POLICY,dev,true
+Is the Wi-Fi free,HOTEL_POLICY,test,true
+Wann ist der Check-in,HOTEL_POLICY,train,true
+Gibt es Frühstück,HOTEL_POLICY,train,true
+Sind Haustiere erlaubt,HOTEL_POLICY,dev,true
+Ist WLAN im Preis enthalten,HOTEL_POLICY,test,true
+À quelle heure est le départ,HOTEL_POLICY,train,true
+Le petit déjeuner est-il compris,HOTEL_POLICY,dev,true
+Acceptez-vous les animaux,HOTEL_POLICY,test,true
+Hi there how are you,GREETING,train,true
+Hello hotel team,GREETING,train,true
+Good afternoon,GREETING,train,true
+Hey there,GREETING,dev,true
+Greetings from London,GREETING,test,true
+Guten Tag,GREETING,train,true
+Hallo zusammen,GREETING,train,true
+Guten Morgen,GREETING,dev,true
+Schönen Abend,GREETING,test,true
+Bonjour à tous,GREETING,train,true
+Salut,GREETING,dev,true
+Bonsoir,GREETING,test,true
+Tell me about the moon,OTHER,train,true
+Write a song for me,OTHER,train,true
+Calculate 15 times 7,OTHER,train,true
+Where is the nearest pharmacy,OTHER,dev,true
+What is the weather tomorrow,OTHER,test,true
+Erzähle mir einen Witz,OTHER,train,true
+Wie wird das Wetter morgen,OTHER,train,true
+Rechne fünf mal acht,OTHER,dev,true
+Wer gewann das Spiel,OTHER,test,true
+Raconte une blague,OTHER,train,true
+Quel temps fait-il demain,OTHER,dev,true
+Écris un poème,OTHER,test,true

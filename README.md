@@ -18,7 +18,8 @@ the user confirms a valid quote. An LLM will never be the source of truth for bo
 ```text
 Gradio UI
   -> Conversation Controller                         (implemented)
-     -> Conservative date and slot parser            (implemented)
+     -> Trained multilingual intent and BIO models   (implemented in semantic mode)
+     -> Conservative date and slot parser            (booking authority)
      -> Deterministic BookingState                    (implemented)
         -> Guarded booking workflow + SQLite         (implemented)
         -> Hotel-policy retrieval + sources          (implemented)
@@ -42,6 +43,7 @@ Implemented:
 - configurable booking policy in `configs/booking.json`
 - synthetic intent starter covering all six intents
 - synthetic BIO-format NER starter covering all six entity types
+- fixed-split multilingual intent examples, reproducible training, and versioned model artifacts
 - Gradio shell with conversation, booking summary, new-conversation control, and demo panel
 - root `app.py` and `requirements.txt` for Hugging Face Spaces
 - unit, ML-data-contract, and integration tests
@@ -54,13 +56,12 @@ Booking and retrieval:
 - policy answers return authored wording and a source ID; unsupported questions are declined
 - semantic retrieval uses multilingual Sentence-Transformers and FAISS when enabled
 
-Not implemented yet:
+Still needed before a real hotel launch:
 
-- tokenizers, model training, model inference, or model artifacts
-- intent or NER evaluation results
-- constrained LLM interpretation and robust free-form multilingual slot extraction
-- measured semantic retrieval results on a held-out question set
-- end-to-end evaluation reports
+- verified hotel policies, currency, taxes, payment and reservation operations
+- durable shared sessions, authentication and customer-data controls
+- realistic guest-language evaluations and calibrated confidence thresholds
+- the concept's Qwen constrained-JSON interpreter and 30-dialogue baseline comparison
 
 ## 4. Installation
 
@@ -84,20 +85,33 @@ The repository also has two deliberately small, manually authored synthetic star
 - `data/intent/starter.csv`: text, one of six intent labels, and a synthetic-data marker
 - `data/ner/starter.jsonl`: pre-tokenized text, aligned BIO tags, and a synthetic-data marker
 
-These files exist to define executable data contracts. They are not representative of real
-hotel traffic and cannot support credible real-world performance claims. Their adjacent README
-files document provenance and limitations.
+`data/intent/collected.csv` adds 72 hand-authored English, German and French messages with fixed
+train/dev/test assignments. All data is synthetic and cannot support real-world performance
+claims. The adjacent README files document provenance and limitations.
 
 ## 6. Model development
 
-The Phase 1 concept selects Qwen2.5-1.5B-Instruct for constrained multilingual intent and slot
-proposals. The existing intent starter remains an optional experiment. Inference commands will
-be documented after that layer exists.
+The supervised intent baseline compares word, character and multilingual embedding features on
+the dev split, then evaluates the selected model on the fixed test split. The embedding model is
+the same pinned multilingual Sentence-Transformers model used for RAG. Train both models with:
+
+```bash
+python -m pip install -e '.[dev,ml]'
+python scripts/train_models.py
+```
+
+Artifacts and a machine-readable evaluation report are committed under `models/trained/`. The
+selected intent model scored 15/18 test examples (83% accuracy; macro F1 0.83). This tiny,
+authored test is an integration check, not a production accuracy estimate. The concept's Qwen
+interpreter is a separate future component; this baseline does not imply Qwen was fine-tuned.
 
 ## 7. NER-model training
 
-The BIO starter remains an optional experiment and is not the selected extraction path in the
-Phase 1 concept.
+The BIO starter trains a token classifier with lexical and neighboring-token features. A small
+dev split selects its regularization strength. Its current test token F1 excluding `O` is
+reported in `models/trained/evaluation.json` on only two synthetic utterances. The model returns
+entity proposals in debug output; validated booking details come from explicit date and slot
+parsing. This avoids letting uncertain token tags change reservation state.
 
 ## 8. Policy retrieval
 
@@ -106,7 +120,7 @@ keyword retrieval and works with the base install. To enable multilingual vector
 
 ```bash
 python -m pip install -e '.[rag]'
-HOTEL_RAG_MODE=semantic python app.py
+HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python app.py
 ```
 
 The semantic mode loads a pinned multilingual Sentence-Transformers model and builds an in-memory
@@ -115,6 +129,8 @@ downloads the model once and runs with local files only. Answers return the sour
 decline questions below the retrieval threshold. On the small, manually authored set in
 `data/knowledge_base/evaluation.json`, semantic Hit@1 is 17/20 (85%) and both unsupported
 questions are declined. This is a development check, not a real-traffic accuracy estimate.
+In semantic mode the same encoder also runs the trained intent classifier and advisory BIO
+tagger. The keyword mode works with the base install and skips those models.
 
 ## 9. Run locally
 
@@ -151,9 +167,10 @@ pytest
 ruff check .
 mypy
 HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_retrieval.py
+python scripts/train_models.py
 ```
 
-Run the evaluation script to recompute the small retrieval figures above. The full scripted
+Run the scripts to recompute the small retrieval and training figures above. The full scripted
 dialogue comparison in the concept has not been run yet.
 
 ## 11. Hugging Face Spaces deployment
@@ -162,14 +179,15 @@ For a Gradio Space:
 
 1. Create a new Space using the Gradio SDK and Python 3.11.
 2. Push this repository, including root `app.py`, `requirements.txt`, `pyproject.toml`, `src/`,
-   `app/`, `configs/`, and `data/`.
+   `app/`, `configs/`, `data/`, and `models/trained/`.
 3. Spaces installs `requirements.txt`, which installs the local package and its pinned runtime
    dependencies.
 4. The Space starts `app.py`; Gradio binds to the platform-provided port when configured through
    `HOTEL_UI_PORT`.
 
-The Docker build fetches the pinned embedding model. Spaces using `requirements.txt` run the
-lightweight keyword mode unless the `rag` extra is installed and `HOTEL_RAG_MODE=semantic` is set.
+The Docker build fetches the pinned embedding model and includes the trained artifacts. Spaces
+using `requirements.txt` run the keyword mode unless the `rag` extra is installed and
+`HOTEL_RAG_MODE=semantic` is set.
 
 ## 12. Repository layout
 
@@ -177,13 +195,14 @@ lightweight keyword mode unless the `rag` extra is installed and `HOTEL_RAG_MODE
 app.py                         Hugging Face Spaces entry point
 app/gradio_app.py              Gradio UI factory
 configs/booking.json           Required slots and turn policy
-data/intent/                   Synthetic intent starter and provenance
-data/ner/                      Synthetic BIO starter and provenance
+data/intent/                   Synthetic multilingual intent data and provenance
+data/ner/                      Synthetic BIO data and provenance
+models/trained/                Trained classifiers and measured development results
 reports/                       Generated evaluation-output location
 src/hotel_assistant/
   dialogue/state.py            Deterministic per-session booking state
   services/booking.py           Guarded booking sequence and quote
-  ml/{intent,slots}/            Optional supervised ML experiments
+  ml/                           Training and guarded inference
   rag/policies.py              Grounded policy retrieval
   services/chat.py             Conversation controller
   services/interpret.py        Conservative slot parser

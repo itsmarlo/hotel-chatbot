@@ -4,6 +4,9 @@
 line has aligned `tokens` and `tags` arrays plus an `is_synthetic` marker. It exists to define
 the annotation contract, not to support credible model-performance claims.
 
-Phase C will expand and audit the annotations, define immutable splits, align subword labels,
-train the token-classification model, and evaluate entity-level precision, recall, and F1.
+The training script uses the first six examples for training, the next two for development and
+the final two for test. It fits a lexical context classifier and reports token F1 excluding `O`.
+Ten authored synthetic examples cannot establish entity-level or real-world quality. The model
+only supplies debug proposals; the booking guard uses explicit validated input. More independent
+multilingual annotations and entity-level evaluation are required before applying its proposals.
 

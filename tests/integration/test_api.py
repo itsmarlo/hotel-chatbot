@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from hotel_assistant.api.main import create_app
@@ -103,6 +104,24 @@ def test_french_booking_keeps_language_across_date_turns(tmp_path: Path) -> None
         assert "Réservation confirmée" in confirmed["message"]
 
 
+def test_declining_quote_discards_booking_without_reservation(tmp_path: Path) -> None:
+    settings = Settings(database_path=tmp_path / "api.db")
+    with TestClient(create_app(settings)) as client:
+        first = client.post(
+            "/chat",
+            json={
+                "message": "Book a double room 2027-06-12 to 2027-06-14 for 2 guests. "
+                "My name is Alex Kim"
+            },
+        ).json()
+        assert first["debug"]["selected_route"] == "quote"
+        declined = client.post(
+            "/chat", json={"message": "don't book", "session_id": first["session_id"]}
+        ).json()
+    assert declined["debug"]["selected_route"] == "booking_discarded"
+    assert HotelRepository(settings.database_path).count_rows("reservations") == 3
+
+
 def test_chat_validates_empty_messages(tmp_path: Path) -> None:
     settings = Settings(database_path=tmp_path / "api.db")
 
@@ -110,3 +129,20 @@ def test_chat_validates_empty_messages(tmp_path: Path) -> None:
         response = client.post("/chat", json={"message": "   "})
 
     assert response.status_code == 422
+
+
+def test_trained_intent_model_routes_without_creating_reservations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The multilingual model can identify actions; it must not write bookings.
+    monkeypatch.setenv("HOTEL_RAG_MODE", "semantic")
+    monkeypatch.setenv("HOTEL_RAG_LOCAL_ONLY", "1")
+    settings = Settings(database_path=tmp_path / "semantic.db")
+    with TestClient(create_app(settings)) as client:
+        cancel = client.post("/chat", json={"message": "Cancel my reservation"}).json()
+        book = client.post("/chat", json={"message": "Je veux réserver une chambre"}).json()
+    assert cancel["debug"]["selected_route"] == "unsupported_reservation_change"
+    assert cancel["debug"]["confidence"] >= 0.7
+    assert book["debug"]["selected_route"] == "clarification"
+    assert book["debug"]["detected_intent"] == "BOOKING"
+    assert HotelRepository(settings.database_path).count_rows("reservations") == 3
