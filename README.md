@@ -171,7 +171,14 @@ python scripts/train_models.py
 ```
 
 Run the scripts to recompute the small retrieval and training figures above. The full scripted
-dialogue comparison in the concept has not been run yet.
+dialogue check runs with:
+
+```bash
+HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_dialogues.py
+```
+
+It passed 30/30 authored scenarios in three languages. See [docs/evaluation.md](docs/evaluation.md)
+for the method and limits. The concept's single-prompt baseline comparison remains to be built.
 
 ## 11. Hugging Face Spaces deployment
 

@@ -37,10 +37,12 @@ interface, then a single-prompt baseline and comparison.
 ## Phase 5: Gradio and comparison
 
 - Done: connect the controller to Gradio and display grounded sources.
+- Done: run 30 synthetic multilingual dialogues through the controller; 30/30 pass, including
+  pre-confirmation database checks. See `docs/evaluation.md` for the narrow scope.
 - Build a single-prompt baseline that runs on the same scripted dialogues but cannot alter
   the guarded booking store.
-- Evaluate 30 dialogues, 10 per language, against the concept's completion, invalid-input,
-  pre-confirmation, retrieval and unsafe-booking targets. Generate metrics from test runs.
+- Repeat the 30-dialogue evaluation with independently collected guest language and compare
+  against the single-prompt baseline.
 
 The earlier intent and BIO starter datasets remain available as experiments; they do not replace
 the multilingual LLM design selected in the Phase 1 concept.
