@@ -21,7 +21,7 @@ from hotel_assistant.services.chat import ChatService
 def create_app(settings: Settings | None = None) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     repository = HotelRepository(runtime_settings.database_path)
-    chat_service = ChatService()
+    chat_service = ChatService(repository)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
@@ -32,7 +32,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Hotel AI Assistant API",
-        description="Phase 1 API foundation for the hotel assistant.",
+        description="Hotel booking and grounded policy assistant.",
         version=__version__,
         lifespan=lifespan,
     )
@@ -45,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             service="hotel-ai-assistant",
             version=__version__,
             database="ready",
+            retrieval=chat_service.retrieval_mode,
         )
 
     @app.post("/chat", response_model=ChatResponse, tags=["chat"])

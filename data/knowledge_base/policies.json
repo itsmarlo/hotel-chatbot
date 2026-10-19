@@ -1,0 +1,42 @@
+[
+  {
+    "id": "check-in",
+    "title": "Check-in and check-out",
+    "keywords": ["check in", "check-in", "check out", "check-out", "arrival", "arrive", "departure", "ankunft", "abreise", "einchecken", "arrivée", "arriver", "départ"],
+    "en": "Check-in starts at 15:00 and check-out is by 11:00. Please contact reception in advance for a late arrival.",
+    "de": "Der Check-in beginnt um 15:00 Uhr und der Check-out ist bis 11:00 Uhr. Bitte kontaktieren Sie die Rezeption vor einer späten Anreise.",
+    "fr": "L'enregistrement commence à 15 h et le départ doit avoir lieu avant 11 h. Pour une arrivée tardive, veuillez contacter la réception à l'avance."
+  },
+  {
+    "id": "identification",
+    "title": "Identification",
+    "keywords": ["id", "passport", "identity", "documents", "ausweis", "reisepass", "identité", "passeport", "papiers"],
+    "en": "Every guest must present a valid government-issued photo ID or passport at check-in.",
+    "de": "Jeder Gast muss beim Check-in einen gültigen amtlichen Lichtbildausweis oder Reisepass vorlegen.",
+    "fr": "Chaque client doit présenter une pièce d'identité officielle avec photo ou un passeport valide lors de l'enregistrement."
+  },
+  {
+    "id": "generator",
+    "title": "Generator hours",
+    "keywords": ["generator", "electricity", "power", "strom", "stromausfall", "notstrom", "générateur", "électricité"],
+    "en": "The hotel's backup generator operates during electricity outages from 18:00 to 23:00. Power outside those hours is not guaranteed during an outage.",
+    "de": "Der Notstromgenerator des Hotels läuft bei Stromausfällen von 18:00 bis 23:00 Uhr. Außerhalb dieser Zeiten ist die Stromversorgung bei einem Ausfall nicht garantiert.",
+    "fr": "Le groupe électrogène de secours fonctionne pendant les coupures de 18 h à 23 h. L'électricité n'est pas garantie en dehors de ces heures lors d'une coupure."
+  },
+  {
+    "id": "cancellation",
+    "title": "Cancellation",
+    "keywords": ["cancel", "cancellation", "refund", "stornierung", "stornieren", "annulation", "annuler", "remboursement"],
+    "en": "This prototype does not process cancellations or refunds. Contact reception directly to request a cancellation.",
+    "de": "Dieser Prototyp bearbeitet keine Stornierungen oder Erstattungen. Bitte wenden Sie sich für eine Stornierung direkt an die Rezeption.",
+    "fr": "Ce prototype ne traite pas les annulations ni les remboursements. Contactez directement la réception pour demander une annulation."
+  },
+  {
+    "id": "payment",
+    "title": "Payments",
+    "keywords": ["pay", "payment", "card", "price", "bezahlen", "zahlung", "preis", "payer", "paiement", "carte", "prix"],
+    "en": "This prototype does not accept payments. Room prices shown in the demo are synthetic and are not a payable offer.",
+    "de": "Dieser Prototyp nimmt keine Zahlungen entgegen. Die angezeigten Zimmerpreise sind synthetische Demodaten und kein zahlbares Angebot.",
+    "fr": "Ce prototype n'accepte aucun paiement. Les prix affichés sont des données de démonstration et ne constituent pas une offre payable."
+  }
+]

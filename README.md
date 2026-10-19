@@ -4,8 +4,8 @@ An academic prototype of Bellhob, a guarded hotel booking assistant for the fict
 Beit Zeitouna hotel in Beirut. The Phase 1 concept calls for multilingual dialogue,
 deterministic booking rules, policy retrieval, and measured evaluation.
 
-The initial application shell and booking state are complete. The first guarded booking workflow
-is implemented as a Python service. No model has been trained and no performance result is claimed.
+The app now answers questions from authored hotel policies and handles guarded room requests
+through the UI and API. The fictional data and prices are for demonstration; no payment is taken.
 
 ## 1. Project goal
 
@@ -17,25 +17,25 @@ the user confirms a valid quote. An LLM will never be the source of truth for bo
 
 ```text
 Gradio UI
-  -> Conversation Controller                         (planned)
-     -> Constrained multilingual LLM interpretation  (planned)
+  -> Conversation Controller                         (implemented)
+     -> Conservative date and slot parser            (implemented)
      -> Deterministic BookingState                    (implemented)
-        -> Guarded booking workflow + SQLite         (Python service implemented)
-        -> Hotel-policy FAISS retrieval + sources    (planned)
+        -> Guarded booking workflow + SQLite         (implemented)
+        -> Hotel-policy retrieval + sources          (implemented)
 ```
 
-The current UI calls a framework-neutral placeholder service and stores a separate
-`BookingState` object in each Gradio browser session. The guarded workflow is not yet connected
-to the UI; it can be exercised directly through its Python API.
+The Gradio UI and FastAPI endpoint use the same controller. Conversation state is held in a
+bounded, expiring in-process store. Run one application worker; durable multi-worker sessions
+require a shared session store before a wider deployment.
 
 An earlier project specification introduced optional FastAPI, SQLite, and Docker foundations.
-They remain tested and isolated, but are not required by the revised Phase A Gradio MVP.
+The API, SQLite store, and Docker packaging now support the interactive prototype.
 
-## 3. Phase A status
+## 3. Current status
 
 Implemented:
 
-- Python package and pinned Phase A dependencies
+- Python package and pinned base dependencies
 - environment-backed configuration and structured logging
 - deterministic booking state with four mandatory and two optional slots
 - ordered missing-slot detection, correction support, atomic validation, reset, and 10-turn limit
@@ -46,18 +46,20 @@ Implemented:
 - root `app.py` and `requirements.txt` for Hugging Face Spaces
 - unit, ML-data-contract, and integration tests
 
-New Phase 2 foundation:
+Booking and retrieval:
 
 - `BookingWorkflow` enforces search, quote, explicit confirmation, then creation
 - SQLite creation atomically rechecks occupancy and the quoted nightly price
 - corrected booking details invalidate the earlier search, quote, and confirmation
+- policy answers return authored wording and a source ID; unsupported questions are declined
+- semantic retrieval uses multilingual Sentence-Transformers and FAISS when enabled
 
 Not implemented yet:
 
 - tokenizers, model training, model inference, or model artifacts
 - intent or NER evaluation results
-- conversation controller and UI booking flow
-- hotel documents, SentenceTransformer embeddings, FAISS, or grounded policy responses
+- constrained LLM interpretation and robust free-form multilingual slot extraction
+- measured semantic retrieval results on a held-out question set
 - end-to-end evaluation reports
 
 ## 4. Installation
@@ -77,7 +79,7 @@ activated with `source venv/bin/activate`.
 
 ## 5. Dataset
 
-Phase A provides two deliberately small, manually authored synthetic starters:
+The repository also has two deliberately small, manually authored synthetic starters:
 
 - `data/intent/starter.csv`: text, one of six intent labels, and a synthetic-data marker
 - `data/ner/starter.jsonl`: pre-tokenized text, aligned BIO tags, and a synthetic-data marker
@@ -97,12 +99,22 @@ be documented after that layer exists.
 The BIO starter remains an optional experiment and is not the selected extraction path in the
 Phase 1 concept.
 
-## 8. RAG indexing and evaluation
+## 8. Policy retrieval
 
-Planned after guarded tools. Fictional hotel-policy Markdown documents will be embedded with a
-lightweight SentenceTransformer model and indexed with FAISS. Retrieval will be independently
-evaluated with Hit@k or Recall@k. Answers will cite sources and decline when supporting evidence
-is unavailable.
+Policies live in `data/knowledge_base/policies.json`. The default local mode uses conservative
+keyword retrieval and works with the base install. To enable multilingual vector retrieval:
+
+```bash
+python -m pip install -e '.[rag]'
+HOTEL_RAG_MODE=semantic python app.py
+```
+
+The semantic mode loads a pinned multilingual Sentence-Transformers model and builds an in-memory
+FAISS index over the policy text. Its first local run downloads model files. The Docker build
+downloads the model once and runs with local files only. Answers return the source policy ID and
+decline questions below the retrieval threshold. On the small, manually authored set in
+`data/knowledge_base/evaluation.json`, semantic Hit@1 is 17/20 (85%) and both unsupported
+questions are declined. This is a development check, not a real-traffic accuracy estimate.
 
 ## 9. Run locally
 
@@ -119,8 +131,9 @@ Open <http://127.0.0.1:7860>. To select another port:
 HOTEL_UI_PORT=7861 python app.py
 ```
 
-The current response clearly identifies itself as a Phase A placeholder. The state panel and
-reset behavior are functional; conversation integration follows retrieval and LLM development.
+Try `When is check-in?` or `I want to book a double room`. Dates must use `YYYY-MM-DD`.
+The assistant asks for missing information, quotes an available synthetic room, and only creates
+a reservation after the exact confirmation phrase shown in the chat.
 
 Optional earlier foundations:
 
@@ -137,10 +150,11 @@ API documentation is then available at <http://127.0.0.1:8000/docs>.
 pytest
 ruff check .
 mypy
+HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_retrieval.py
 ```
 
-No metric in this repository is hand-written or fabricated. Later evaluation scripts will
-calculate and store their outputs beneath `reports/`.
+Run the evaluation script to recompute the small retrieval figures above. The full scripted
+dialogue comparison in the concept has not been run yet.
 
 ## 11. Hugging Face Spaces deployment
 
@@ -154,9 +168,8 @@ For a Gradio Space:
 4. The Space starts `app.py`; Gradio binds to the platform-provided port when configured through
    `HOTEL_UI_PORT`.
 
-Model artifacts are intentionally absent. Later phases must either commit suitably
-small artifacts or download a versioned Hugging Face model during startup with graceful failure
-handling.
+The Docker build fetches the pinned embedding model. Spaces using `requirements.txt` run the
+lightweight keyword mode unless the `rag` extra is installed and `HOTEL_RAG_MODE=semantic` is set.
 
 ## 12. Repository layout
 
@@ -171,8 +184,9 @@ src/hotel_assistant/
   dialogue/state.py            Deterministic per-session booking state
   services/booking.py           Guarded booking sequence and quote
   ml/{intent,slots}/            Optional supervised ML experiments
-  rag/                         Future FAISS retrieval components
-  services/chat.py             Phase A application seam
+  rag/policies.py              Grounded policy retrieval
+  services/chat.py             Conversation controller
+  services/interpret.py        Conservative slot parser
 tests/{unit,ml,integration}/   Automated checks by layer
 ```
 

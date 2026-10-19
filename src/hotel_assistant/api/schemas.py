@@ -10,6 +10,7 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     database: str
+    retrieval: str
 
 
 class ChatRequest(BaseModel):

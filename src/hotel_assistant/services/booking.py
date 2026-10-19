@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.dialogue.state import BookingState
 from hotel_assistant.domain.models import Reservation, RoomAvailability
 
 _CONFIRMATIONS = frozenset({"confirm booking", "buchung bestätigen", "confirmer la réservation"})
+_HOTEL_TIMEZONE = ZoneInfo("Asia/Beirut")
+
+
+def _hotel_today() -> date:
+    return datetime.now(_HOTEL_TIMEZONE).date()
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +49,7 @@ class BookingWorkflow:
         assert self.state.check_in is not None
         assert self.state.check_out is not None
         assert self.state.guests is not None
-        if self.state.check_in < (self._fixed_today or date.today()):
+        if self.state.check_in < (self._fixed_today or _hotel_today()):
             raise ValueError("check-in must not be in the past")
         self._rooms = self.repository.find_available_rooms(
             check_in=self.state.check_in,
@@ -92,7 +98,7 @@ class BookingWorkflow:
         assert self.state.check_in is not None
         assert self.state.check_out is not None
         assert self.state.guests is not None
-        if self.state.check_in < (self._fixed_today or date.today()):
+        if self.state.check_in < (self._fixed_today or _hotel_today()):
             raise ValueError("check-in must not be in the past")
         try:
             reservation = self.repository.create_reservation(

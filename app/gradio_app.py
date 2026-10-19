@@ -38,7 +38,7 @@ def reset_conversation() -> tuple[
 
 
 def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
-    """Build the Phase A UI against the framework-neutral chat service."""
+    """Build the hotel conversation UI against the guarded chat service."""
     service = chat_service or ChatService()
 
     def submit_message(
@@ -54,7 +54,21 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         dict[str, object],
         dict[str, Any],
     ]:
+        if not message.strip():
+            return "", history, session_id or "", booking_state, format_booking_summary(
+                booking_state
+            ), {}
+        if len(message) > 4_000:
+            updated_history = [
+                *history,
+                {"role": "user", "content": message[:200] + "…"},
+                {"role": "assistant", "content": "Please keep messages under 4,000 characters."},
+            ]
+            return "", updated_history, session_id or "", booking_state, format_booking_summary(
+                booking_state
+            ), {}
         result = service.respond(message, session_id)
+        current_state = result.booking_state or booking_state
         updated_history = [
             *history,
             {"role": "user", "content": message},
@@ -64,16 +78,19 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             "",
             updated_history,
             result.session_id,
-            booking_state,
-            format_booking_summary(booking_state),
+            current_state,
+            format_booking_summary(current_state),
             result.debug,
         )
 
+    def reset_session(
+        session_id: str | None,
+    ) -> tuple[list[dict[str, Any]], str, None, BookingState, dict[str, object], dict[str, Any]]:
+        service.reset(session_id)
+        return reset_conversation()
+
     with gr.Blocks(title="Hotel AI Assistant") as demo:
-        gr.Markdown(
-            "# Hotel AI Assistant\n"
-            "Academic MVP · deterministic booking state · supervised ML components coming next."
-        )
+        gr.Markdown("# Bellhob · Beit Zeitouna\nFictional hotel booking and policy assistant")
         session = gr.State(value=None)
         booking_state = gr.State(value=create_session_state())
         with gr.Row():
@@ -98,10 +115,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 )
 
         with gr.Accordion("Developer / demo mode", open=False):
-            gr.Markdown(
-                "Structured pipeline outputs are shown here for demonstrations. "
-                "No hidden reasoning is exposed."
-            )
+            gr.Markdown("Intent, extracted details, route, and policy sources for this turn.")
             debug = gr.JSON(label="Intent, entities, route, and sources", value={})
 
         inputs = [message, chatbot, session, booking_state]
@@ -109,7 +123,8 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         send.click(submit_message, inputs=inputs, outputs=outputs)
         message.submit(submit_message, inputs=inputs, outputs=outputs)
         reset.click(
-            reset_conversation,
+            reset_session,
+            inputs=[session],
             outputs=[chatbot, message, session, booking_state, summary, debug],
         )
 

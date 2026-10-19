@@ -13,6 +13,7 @@ dependencies = [
   "gradio==6.28.0",
   "httpx==0.28.1",
   "pydantic==2.13.5",
+  "tzdata==2026.5",
   "uvicorn[standard]==0.35.0",
 ]
 
@@ -33,10 +34,8 @@ ml = [
   "transformers==4.56.2",
 ]
 rag = [
-  "chromadb==1.1.1",
-  "langchain==0.3.27",
-  "langchain-chroma==0.2.6",
-  "sentence-transformers==5.1.1",
+  "faiss-cpu==1.15.1",
+  "sentence-transformers==6.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
