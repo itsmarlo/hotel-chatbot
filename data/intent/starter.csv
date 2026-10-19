@@ -1,0 +1,32 @@
+text,intent,is_synthetic
+I would like to book a room,BOOKING,true
+Can I reserve a double room for next weekend,BOOKING,true
+We need accommodation for three guests,BOOKING,true
+Please start a new hotel booking,BOOKING,true
+I want a room from Monday until Thursday,BOOKING,true
+Please cancel my booking,CANCEL_BOOKING,true
+I need to cancel reservation ABC123,CANCEL_BOOKING,true
+Can you remove my upcoming stay,CANCEL_BOOKING,true
+I will not be able to come so cancel it,CANCEL_BOOKING,true
+Please void the reservation under my name,CANCEL_BOOKING,true
+Change my arrival date to Friday,MODIFY_BOOKING,true
+I need to add one guest to my booking,MODIFY_BOOKING,true
+Can I switch my room to a suite,MODIFY_BOOKING,true
+Please move my departure date to Sunday,MODIFY_BOOKING,true
+Update the name on my reservation,MODIFY_BOOKING,true
+Are pets allowed at the hotel,HOTEL_POLICY,true
+What time is breakfast served,HOTEL_POLICY,true
+Do you have free parking,HOTEL_POLICY,true
+When can guests check in,HOTEL_POLICY,true
+Is Wi-Fi included in the room rate,HOTEL_POLICY,true
+Hello,GREETING,true
+Hi there,GREETING,true
+Good morning,GREETING,true
+Hey hotel assistant,GREETING,true
+Good evening how are you,GREETING,true
+What is the weather in Tokyo,OTHER,true
+Write a poem about the ocean,OTHER,true
+Who won the football match,OTHER,true
+Help me repair my bicycle,OTHER,true
+What is the capital of France,OTHER,true
+

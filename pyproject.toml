@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hotel-ai-assistant"
+version = "0.1.0"
+description = "A modular hotel AI assistant demonstrating a production-oriented ML lifecycle."
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "fastapi==0.141.1",
+  "gradio==6.28.0",
+  "httpx==0.28.1",
+  "pydantic==2.13.5",
+  "uvicorn[standard]==0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy==2.3.1",
+  "pytest==8.4.2",
+  "pytest-cov==7.0.0",
+  "ruff==0.13.2",
+]
+# Installed in later phases so Phase 1 remains lightweight.
+ml = [
+  "datasets==4.1.1",
+  "mlflow==3.4.0",
+  "pandas==2.3.3",
+  "scikit-learn==1.7.2",
+  "torch==2.8.0",
+  "transformers==4.56.2",
+]
+rag = [
+  "chromadb==1.1.1",
+  "langchain==0.3.27",
+  "langchain-chroma==0.2.6",
+  "sentence-transformers==5.1.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hotel_assistant"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+pythonpath = [".", "src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+extend-exclude = ["main.py", "tools.py"]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+follow_imports = "skip"
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
+packages = ["hotel_assistant"]
