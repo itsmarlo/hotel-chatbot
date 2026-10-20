@@ -19,6 +19,12 @@
 #prompt-row { gap:.45rem; }
 #prompt-row button { font-size:.84rem; border-color:var(--bh-line); color:var(--bh-ink); background:#fff; text-align:left; }
 #prompt-row button:hover { border-color:var(--bh-accent); }
+#prompt-row button:focus-visible, #send-button:focus-visible, #confirm-booking:focus-visible,
+#new-conversation:focus-visible { outline:3px solid var(--bh-accent); outline-offset:2px; }
+#confirm-booking { margin-top:.35rem; }
+#new-conversation { align-self:flex-start; }
+.bh-panel { scroll-margin-top:1rem; }
+.bh-panel + div { margin-top:.75rem; }
 .bh-panel { border:1px solid var(--bh-line); border-radius:.6rem; background:#fff; padding:1.15rem; }
 .bh-panel h2 { font-family:Georgia, serif; font-size:1.2rem; margin:0 0 .3rem; color:var(--bh-ink); }
 .bh-panel-copy { color:var(--bh-muted); font-size:.82rem; line-height:1.45; margin:0 0 1rem; }
@@ -34,4 +40,11 @@
 .bh-note { margin-top:1rem; padding:.8rem; background:#f7f5f0; border-radius:.35rem; color:var(--bh-muted); font-size:.76rem; line-height:1.45; }
 .bh-footnote { color:var(--bh-muted); font-size:.75rem; line-height:1.45; margin-top:.8rem; }
 #new-conversation { margin-top:.25rem; }
-@media (max-width: 760px) { #bellhob-shell { padding:1rem .5rem 2rem; } .bh-header { padding-top:.4rem; } .bh-status { display:none; } #chatbot { min-height:390px; } }
+@media (max-width: 760px) {
+  #bellhob-shell { padding:1rem .5rem 2rem; }
+  .bh-header { padding-top:.4rem; }
+  .bh-status { display:none; }
+  #chatbot { min-height:360px; }
+  #prompt-row { flex-wrap:wrap; }
+  #prompt-row button { flex:1 1 9rem; }
+}

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from datetime import date
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -8,11 +10,52 @@ import gradio as gr
 
 from hotel_assistant.config import Settings
 from hotel_assistant.dialogue import BookingState
-from hotel_assistant.services.chat import ChatService
+from hotel_assistant.services.chat import ChatResult, ChatService
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BOOKING_CONFIG = PROJECT_ROOT / "configs" / "booking.json"
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
+
+STARTER_QUESTIONS = (
+    ("Plan a stay", "I would like to book a room"),
+    ("Check-in times", "What time is check-in and check-out?"),
+    ("Cancellation", "What is the cancellation policy?"),
+)
+
+
+def build_booking_request(
+    guest_name: str, check_in: str | None, check_out: str | None, guests: int | None
+) -> str:
+    """Turn the simple form into the explicit wording the guarded parser accepts."""
+    name = guest_name.strip()
+    if not name or not check_in or not check_out or guests is None:
+        raise gr.Error("Add your name, both dates, and the number of guests.")
+    try:
+        arrival = date.fromisoformat(check_in[:10])
+        departure = date.fromisoformat(check_out[:10])
+    except ValueError as exc:
+        raise gr.Error("Choose valid arrival and departure dates.") from exc
+    if departure <= arrival:
+        raise gr.Error("Check-out must be after check-in.")
+    if not isinstance(guests, int) or isinstance(guests, bool) or guests < 1:
+        raise gr.Error("Enter at least one guest.")
+    if not re.fullmatch(r"[A-Za-zÀ-ÿ]+(?:[ '-][A-Za-zÀ-ÿ]+){0,3}", name):
+        raise gr.Error("Use a name of up to four words, with letters only.")
+    return (
+        f"My name is {name}; I would like to book a room from "
+        f"{arrival.isoformat()} to {departure.isoformat()} for {guests} guests."
+    )
+
+
+def confirmation_phrase(result: ChatResult) -> str | None:
+    """Only offer the confirm action when the booking guard has issued a quote."""
+    if result.debug.get("selected_route") != "quote":
+        return None
+    if "Buchung bestätigen" in result.message:
+        return "Buchung bestätigen"
+    if "confirmer la réservation" in result.message:
+        return "confirmer la réservation"
+    return "confirm booking"
 
 
 def create_session_state() -> BookingState:
@@ -86,11 +129,13 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         BookingState,
         str,
         dict[str, Any],
+        str,
+        Any,
     ]:
         if not message.strip():
             return (
                 "", history, session_id or "", booking_state,
-                render_booking_summary(booking_state), {},
+                render_booking_summary(booking_state), {}, "", gr.update(visible=False),
             )
         if len(message) > 4_000:
             updated_history = [
@@ -100,7 +145,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             ]
             return (
                 "", updated_history, session_id or "", booking_state,
-                render_booking_summary(booking_state), {},
+                render_booking_summary(booking_state), {}, "", gr.update(visible=False),
             )
         result = service.respond(message, session_id)
         current_state = result.booking_state or booking_state
@@ -109,6 +154,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             {"role": "user", "content": message},
             {"role": "assistant", "content": result.message},
         ]
+        phrase = confirmation_phrase(result)
         return (
             "",
             updated_history,
@@ -116,13 +162,18 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             current_state,
             render_booking_summary(current_state),
             result.debug,
+            phrase or "",
+            gr.update(visible=phrase is not None),
         )
 
     def reset_session(
         session_id: str | None,
-    ) -> tuple[list[dict[str, Any]], str, None, BookingState, str, dict[str, Any]]:
+    ) -> tuple[
+        list[dict[str, Any]], str, None, BookingState, str, dict[str, Any],
+        str, Any, str, None, None, int,
+    ]:
         service.reset(session_id)
-        return reset_conversation()
+        return (*reset_conversation(), "", gr.update(visible=False), "", None, None, 2)
 
     with gr.Blocks(title="Bellhob | Beit Zeitouna") as demo:
         with gr.Column(elem_id="bellhob-shell"):
@@ -141,15 +192,18 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             )
             session = gr.State(value=None)
             booking_state = gr.State(value=create_session_state())
+            pending_confirmation = gr.State(value="")
             with gr.Row(equal_height=False):
                 with gr.Column(scale=3, min_width=320):
+                    gr.Markdown("**Start here** · Choose a question, or type your own below.")
+                    with gr.Row(elem_id="prompt-row"):
+                        prompt_buttons = [
+                            gr.Button(label, size="sm") for label, _ in STARTER_QUESTIONS
+                        ]
                     chatbot = gr.Chatbot(
                         label="Conversation",
                         height=480,
-                        placeholder=(
-                            "Your conversation will appear here. Choose a suggestion below "
-                            "or type a question."
-                        ),
+                        placeholder="Choose a question above or type a message to begin.",
                         elem_id="chatbot",
                     )
                     with gr.Row():
@@ -164,11 +218,12 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                         send = gr.Button(
                             "Send →", variant="primary", scale=1, elem_id="send-button"
                         )
-                    gr.Markdown("**Try asking**")
-                    with gr.Row(elem_id="prompt-row"):
-                        policy_prompt = gr.Button("What time is check-in?", size="sm")
-                        booking_prompt = gr.Button("I’d like to book a room", size="sm")
-                        cancel_prompt = gr.Button("What is your cancellation policy?", size="sm")
+                    confirm = gr.Button(
+                        "Confirm this demo booking",
+                        variant="primary",
+                        visible=False,
+                        elem_id="confirm-booking",
+                    )
                     reset = gr.Button(
                         "Start a new conversation",
                         variant="secondary",
@@ -179,6 +234,19 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                         'information and reservations. No payment is taken.</p>'
                     )
                 with gr.Column(scale=1, min_width=280):
+                    with gr.Accordion("Request a room", open=True):
+                        gr.Markdown("Choose your dates and we’ll check a demo room for you.")
+                        guest_name = gr.Textbox(label="Guest name", placeholder="Alex Kim")
+                        arrival = gr.DateTime(
+                            label="Check-in", include_time=False, type="string"
+                        )
+                        departure = gr.DateTime(
+                            label="Check-out", include_time=False, type="string"
+                        )
+                        guest_count = gr.Number(
+                            label="Guests", value=2, precision=0, minimum=1, maximum=8
+                        )
+                        check_rooms = gr.Button("Check rooms", variant="primary")
                     summary = gr.HTML(value=render_booking_summary(create_session_state()))
 
             with gr.Accordion("Developer details", open=False):
@@ -188,17 +256,34 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 debug = gr.JSON(label="Model and routing details", value={})
 
         inputs = [message, chatbot, session, booking_state]
-        outputs = [message, chatbot, session, booking_state, summary, debug]
-        # Suggestion buttons populate the composer so guests can edit before sending.
-        policy_prompt.click(lambda: "What time is check-in?", outputs=[message])
-        booking_prompt.click(lambda: "I'd like to book a room", outputs=[message])
-        cancel_prompt.click(lambda: "What is your cancellation policy?", outputs=[message])
+        outputs = [
+            message, chatbot, session, booking_state, summary, debug,
+            pending_confirmation, confirm,
+        ]
+        # One click sends each starter question through the same guarded chat path.
+        for button, (_, question) in zip(prompt_buttons, STARTER_QUESTIONS, strict=True):
+            button.click(lambda text=question: text, outputs=[message]).success(
+                submit_message, inputs=inputs, outputs=outputs
+            )
+        check_rooms.click(
+            build_booking_request,
+            inputs=[guest_name, arrival, departure, guest_count],
+            outputs=[message],
+        ).success(submit_message, inputs=inputs, outputs=outputs)
+        confirm.click(
+            lambda phrase: phrase,
+            inputs=[pending_confirmation],
+            outputs=[message],
+        ).success(submit_message, inputs=inputs, outputs=outputs)
         send.click(submit_message, inputs=inputs, outputs=outputs)
         message.submit(submit_message, inputs=inputs, outputs=outputs)
         reset.click(
             reset_session,
             inputs=[session],
-            outputs=[chatbot, message, session, booking_state, summary, debug],
+            outputs=[
+                chatbot, message, session, booking_state, summary, debug,
+                pending_confirmation, confirm, guest_name, arrival, departure, guest_count,
+            ],
         )
 
     return demo
