@@ -166,7 +166,8 @@ Open <http://127.0.0.1:7860>. To select another port:
 HOTEL_UI_PORT=7861 python app.py
 ```
 
-Try `When is check-in?` or `I want to book a double room`. Dates must use `YYYY-MM-DD`.
+Try `When is check-in?` or `I want to book a double room`. Use `YYYY-MM-DD` dates in
+English or French; German bookings also accept `DD.MM.YYYY` (for example, `12.06.2027`).
 The assistant asks for missing information, quotes an available synthetic room, and only creates
 a reservation after the exact confirmation phrase shown in the chat.
 

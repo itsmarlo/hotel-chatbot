@@ -5,7 +5,7 @@ from datetime import date
 
 from hotel_assistant.dialogue.state import BookingState
 
-_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+_DATE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})\b")
 _GUESTS = re.compile(r"\b(\d+)\s*(?:guests?|people|persons?|personen|gäste|personnes?)\b", re.I)
 _NAME = re.compile(
     r"(?:my name is|name is|name:|ich heiße|mein name ist|je m'appelle|mon nom est)\s+"
@@ -18,6 +18,13 @@ _ROOMS = {
     "family": ("family", "familienzimmer", "familiale"),
     "suite": ("suite",),
 }
+
+
+def _parse_explicit_date(value: str) -> date:
+    if "." in value:
+        day, month, year = map(int, value.split("."))
+        return date(year, month, day)
+    return date.fromisoformat(value)
 
 
 def language_of(message: str) -> str:
@@ -54,16 +61,16 @@ def language_of(message: str) -> str:
 
 
 def booking_changes(message: str) -> dict[str, object]:
-    """Extract only explicit, unambiguous fields; dates must be ISO formatted."""
+    """Extract explicit fields, normalizing ISO and German dates to date values."""
     lower = message.casefold()
     changes: dict[str, object] = {}
     dates = _DATE.findall(message)
     if len(dates) > 2:
-        raise ValueError("Please provide at most two dates, in YYYY-MM-DD format.")
+        raise ValueError("Please provide at most two dates.")
     try:
-        parsed = [date.fromisoformat(value) for value in dates]
+        parsed = [_parse_explicit_date(value) for value in dates]
     except ValueError as exc:
-        raise ValueError("Please use valid dates in YYYY-MM-DD format.") from exc
+        raise ValueError("Please use valid dates in YYYY-MM-DD or DD.MM.YYYY format.") from exc
     if len(parsed) == 2:
         changes["check_in"], changes["check_out"] = parsed
     elif parsed:

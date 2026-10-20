@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import time
 from dataclasses import dataclass, field
 from datetime import date
@@ -31,8 +30,8 @@ _PROMPTS = {
     },
     "de": {
         "guest_name": "Ihren Namen (zum Beispiel 'Ich heiße Alex Kim')",
-        "check_in": "ein Anreisedatum im Format YYYY-MM-DD",
-        "check_out": "ein Abreisedatum im Format YYYY-MM-DD",
+        "check_in": "ein Anreisedatum im Format DD.MM.YYYY (z. B. 12.06.2027)",
+        "check_out": "ein Abreisedatum im Format DD.MM.YYYY (z. B. 14.06.2027)",
         "guests": "die Gästezahl (zum Beispiel '2 Gäste')",
     },
     "fr": {
@@ -211,6 +210,13 @@ class ChatService:
         try:
             initial_changes = booking_changes(message)
         except ValueError as exc:
+            if language == "de":
+                return answer(
+                    "Bitte verwenden Sie gültige Daten im Format DD.MM.YYYY "
+                    "(z. B. 12.06.2027) und geben Sie höchstens zwei Daten an.",
+                    "clarification",
+                    "BOOKING",
+                )
             return answer(str(exc), "clarification", "BOOKING")
         if (
             question
@@ -289,19 +295,21 @@ class ChatService:
 
         changes = initial_changes
         if qwen_proposal is not None:
-            # The model may propose ISO dates, but only dates present in the user's
-            # message and agreed with by the deterministic parser can enter state.
-            raw_dates = set(re.findall(r"\b\d{4}-\d{2}-\d{2}\b", message))
+            # Proposed ISO dates must agree with dates parsed from the user's
+            # explicit text, including dates written in German notation.
             for field_name in ("check_in", "check_out"):
                 suggested = getattr(qwen_proposal, field_name)
                 parsed = changes.get(field_name)
                 if suggested and (
-                    suggested not in raw_dates
-                    or not isinstance(parsed, date)
+                    not isinstance(parsed, date)
                     or suggested != parsed.isoformat()
                 ):
                     return answer(
-                        "Please clarify the booking dates in YYYY-MM-DD format.",
+                        (
+                            "Bitte klären Sie die Buchungsdaten im Format DD.MM.YYYY."
+                            if language == "de"
+                            else "Please clarify the booking dates in YYYY-MM-DD format."
+                        ),
                         "clarification",
                         "BOOKING",
                     )
@@ -341,6 +349,12 @@ class ChatService:
                 try:
                     state.update(**changes)
                 except ValueError as exc:
+                    if language == "de" and str(exc) == "check-out must be after check-in":
+                        return answer(
+                            "Das Abreisedatum muss nach dem Anreisedatum liegen.",
+                            "clarification",
+                            "BOOKING",
+                        )
                     return answer(
                         f"Please correct the booking details: {exc}", "clarification", "BOOKING"
                     )
@@ -370,8 +384,11 @@ class ChatService:
                 )
             confirmation = _CONFIRM_BY_LANGUAGE[language]
             if language == "de":
+                assert state.check_in is not None and state.check_out is not None
                 quote_text = (
-                    f"Zimmer {room.room_number} ({room.room_type}) ist für {quote.nights} "
+                    f"Zimmer {room.room_number} ({room.room_type}) ist vom "
+                    f"{state.check_in:%d.%m.%Y} bis {state.check_out:%d.%m.%Y} "
+                    f"für {quote.nights} "
                     f"Nacht/Nächte verfügbar. Demo-Gesamtpreis: {quote.total_cents} Cent. "
                     f"Es wird keine Zahlung eingezogen. Antworten Sie zur Bestätigung genau: "
                     f"{confirmation}"

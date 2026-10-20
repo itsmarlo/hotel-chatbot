@@ -114,7 +114,8 @@ class QwenModel:
             "You interpret English, German and French hotel messages. Return only JSON matching "
             "the schema. Extract only information explicitly in the latest user message. "
             "Use empty strings for absent text or dates and 0 for absent guests. "
-            "Dates must be YYYY-MM-DD; do not infer relative dates. "
+            "Normalize explicit German DD.MM.YYYY dates to YYYY-MM-DD. "
+            "Do not infer relative dates. "
             "A tool is a proposal only: never claim a booking was made. "
             f"Schema: {json.dumps(BookingProposal.model_json_schema(), separators=(',', ':'))}"
         )

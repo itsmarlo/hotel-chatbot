@@ -67,6 +67,26 @@ def test_qwen_date_disagreement_requires_clarification(
     assert repository.count_rows("reservations") == 3
 
 
+def test_qwen_agreed_german_dates_are_admitted_as_normalized_iso(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOTEL_NLP_MODE", "qwen")
+    repository = HotelRepository(tmp_path / "qwen_german.db")
+    service = ChatService(
+        repository=repository,
+        qwen=StubQwen(  # type: ignore[arg-type]
+            proposal(check_in="2030-10-01", check_out="2030-10-02", guests=2)
+        ),
+    )
+    result = service.respond(
+        "Ich möchte ein Zimmer vom 01.10.2030 bis 02.10.2030 für 2 Gäste buchen. "
+        "Mein Name ist Alex Kim."
+    )
+    assert result.debug["selected_route"] == "quote"
+    assert "01.10.2030" in result.message
+    assert repository.count_rows("reservations") == 3
+
+
 def test_policy_question_bypasses_booking_proposal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

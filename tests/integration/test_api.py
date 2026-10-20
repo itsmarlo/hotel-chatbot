@@ -104,6 +104,46 @@ def test_french_booking_keeps_language_across_date_turns(tmp_path: Path) -> None
         assert "Réservation confirmée" in confirmed["message"]
 
 
+def test_german_booking_accepts_and_displays_german_dates(tmp_path: Path) -> None:
+    settings = Settings(database_path=tmp_path / "german.db")
+    with TestClient(create_app(settings)) as client:
+        session_id = None
+        for message in (
+            "Ich möchte ein Doppelzimmer buchen",
+            "Mein Name ist Alex Kim",
+            "Anreise 12.06.2027",
+            "Abreise 14.06.2027",
+            "2 Gäste",
+        ):
+            payload = client.post(
+                "/chat", json={"message": message, "session_id": session_id}
+            ).json()
+            session_id = payload["session_id"]
+            if message == "Mein Name ist Alex Kim":
+                assert "DD.MM.YYYY" in payload["message"]
+        assert payload["debug"]["selected_route"] == "quote"
+        assert "12.06.2027" in payload["message"]
+        assert "14.06.2027" in payload["message"]
+        repository = HotelRepository(settings.database_path)
+        assert repository.count_rows("reservations") == 3
+        confirmed = client.post(
+            "/chat", json={"message": "Buchung bestätigen", "session_id": session_id}
+        ).json()
+        assert confirmed["debug"]["selected_route"] == "booking_created"
+        assert repository.count_rows("reservations") == 4
+
+
+def test_german_booking_explains_invalid_date_in_german(tmp_path: Path) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "german_invalid.db"))) as client:
+        first = client.post("/chat", json={"message": "Ich möchte ein Zimmer buchen"}).json()
+        invalid = client.post(
+            "/chat",
+            json={"message": "Anreise 31.02.2027", "session_id": first["session_id"]},
+        ).json()
+        assert "DD.MM.YYYY" in invalid["message"]
+        assert invalid["debug"]["selected_route"] == "clarification"
+
+
 def test_declining_quote_discards_booking_without_reservation(tmp_path: Path) -> None:
     settings = Settings(database_path=tmp_path / "api.db")
     with TestClient(create_app(settings)) as client:
