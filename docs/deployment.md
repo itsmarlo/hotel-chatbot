@@ -6,7 +6,7 @@ configuration, and trained classifier artifacts. It excludes the local Qwen mode
 evaluation reports, local SQLite database, and development files.
 
 The Space runs the trained intent model and semantic FAISS policy retrieval. Qwen writes
-short replies from verified policy and conversation text on shared ZeroGPU hardware. Booking
+short replies from verified policy and conversation text on the Space CPU. Booking
 quotes, reservation creation, and confirmation remain deterministic. If generation fails or
 violates the reply checks, the verified text is shown instead. Reservations are fictional and use a temporary
 SQLite database that can disappear when the Space restarts. No payment is processed.
@@ -16,7 +16,8 @@ create Gradio Spaces on CPU Basic. ZeroGPU specifies Python 3.12.12 and adds Gra
 require Pydantic 2.12.5, so the Space has its own dependency list. The application's source
 modules are placed on the Python path directly by its entry point. Conversation state stays in
 the app process. Policy retrieval stays on CPU; Qwen weights are preloaded from the Hub at
-build time and moved to ZeroGPU at startup. Visitor GPU quota and queue time can limit access.
+build time. CPU generation is slower, but it avoids the unavailable ZeroGPU workers seen in
+live tests.
 
 To rebuild the exact public bundle:
 

@@ -18,5 +18,5 @@ and creates synthetic reservations only after the guest confirms a quote. No pay
 
 The running Space uses multilingual semantic retrieval and the trained intent model. Qwen
 writes short replies from verified policy or conversation text. Booking quotes, confirmation,
-and reservation creation remain controlled by the booking workflow. The model runs on shared
-ZeroGPU hardware, so responses can queue or be limited by the visitor's daily GPU quota.
+and reservation creation remain controlled by the booking workflow. The model runs on the
+Space CPU while ZeroGPU workers are unavailable, so first responses may take longer.
