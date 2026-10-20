@@ -24,8 +24,8 @@ _DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen",
 _PROMPTS = {
     "en": {
         "guest_name": "your name (for example, 'my name is Alex Kim')",
-        "check_in": "a check-in date in YYYY-MM-DD format",
-        "check_out": "a check-out date in YYYY-MM-DD format",
+        "check_in": "a check-in date in DD.MM.YYYY format (for example, 12.06.2027)",
+        "check_out": "a check-out date in DD.MM.YYYY format (for example, 14.06.2027)",
         "guests": "the number of guests (for example, '2 guests')",
     },
     "de": {
@@ -36,8 +36,8 @@ _PROMPTS = {
     },
     "fr": {
         "guest_name": "votre nom (par exemple « je m'appelle Alex Kim »)",
-        "check_in": "une date d'arrivée au format YYYY-MM-DD",
-        "check_out": "une date de départ au format YYYY-MM-DD",
+        "check_in": "une date d'arrivée au format DD.MM.YYYY (par exemple 12.06.2027)",
+        "check_out": "une date de départ au format DD.MM.YYYY (par exemple 14.06.2027)",
         "guests": "le nombre de personnes (par exemple « 2 personnes »)",
     },
 }
@@ -45,6 +45,22 @@ _CONFIRM_BY_LANGUAGE = {
     "en": "confirm booking",
     "de": "Buchung bestätigen",
     "fr": "confirmer la réservation",
+}
+_GUIDANCE_BY_LANGUAGE = {
+    "en": (
+        "I can help with a room request or hotel policies. For a booking, give dates as "
+        "DD.MM.YYYY, a guest count, and your name. I will ask before creating it."
+    ),
+    "de": (
+        "Ich helfe Ihnen bei Zimmeranfragen und Fragen zum Hotel. Für eine Buchung "
+        "nennen Sie bitte An- und Abreisedatum im Format DD.MM.YYYY, die Anzahl der Gäste "
+        "und Ihren Namen. Vor der Buchung bitte ich um Ihre Bestätigung."
+    ),
+    "fr": (
+        "Je peux vous aider à réserver une chambre ou répondre aux questions sur l’hôtel. "
+        "Pour réserver, indiquez les dates au format DD.MM.YYYY, le nombre de personnes et "
+        "votre nom. Je demanderai votre confirmation avant de créer la réservation."
+    ),
 }
 
 
@@ -308,7 +324,7 @@ class ChatService:
                         (
                             "Bitte klären Sie die Buchungsdaten im Format DD.MM.YYYY."
                             if language == "de"
-                            else "Please clarify the booking dates in YYYY-MM-DD format."
+                            else "Please clarify the booking dates in DD.MM.YYYY format."
                         ),
                         "clarification",
                         "BOOKING",
@@ -394,16 +410,20 @@ class ChatService:
                     f"{confirmation}"
                 )
             elif language == "fr":
+                assert state.check_in is not None and state.check_out is not None
                 quote_text = (
-                    f"La chambre {room.room_number} ({room.room_type}) est disponible pour "
+                    f"La chambre {room.room_number} ({room.room_type}) est disponible du "
+                    f"{state.check_in:%d.%m.%Y} au {state.check_out:%d.%m.%Y} pour "
                     f"{quote.nights} nuit(s). "
                     f"Total de démonstration : {quote.total_cents} centimes. "
                     f"Aucun paiement n'est prélevé. Pour confirmer, répondez exactement : "
                     f"{confirmation}"
                 )
             else:
+                assert state.check_in is not None and state.check_out is not None
                 quote_text = (
-                    f"Room {room.room_number} ({room.room_type}) is available for "
+                    f"Room {room.room_number} ({room.room_type}) is available from "
+                    f"{state.check_in:%d.%m.%Y} to {state.check_out:%d.%m.%Y} for "
                     f"{quote.nights} night(s). Demo total: {quote.total_cents} cents. "
                     f"No payment is taken. To confirm these details, reply exactly: {confirmation}"
                 )
@@ -427,8 +447,7 @@ class ChatService:
                 "HOTEL_POLICY",
             )
         return answer(
-            "I can help with a room request or hotel policies. For a booking, give dates as "
-            "YYYY-MM-DD, a guest count, and your name. I will ask before creating it.",
+            _GUIDANCE_BY_LANGUAGE[language],
             "guidance",
             "OTHER",
         )

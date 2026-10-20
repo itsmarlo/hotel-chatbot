@@ -57,6 +57,8 @@ def language_of(message: str) -> str:
         )
     ):
         return "de"
+    if re.search(r"\b(?:ich|möchte|bitte|datum|daten|anreise|abreise|für|buchung)\b", lower):
+        return "de"
     return "en"
 
 
@@ -70,7 +72,7 @@ def booking_changes(message: str) -> dict[str, object]:
     try:
         parsed = [_parse_explicit_date(value) for value in dates]
     except ValueError as exc:
-        raise ValueError("Please use valid dates in YYYY-MM-DD or DD.MM.YYYY format.") from exc
+        raise ValueError("Please use valid dates in DD.MM.YYYY format.") from exc
     if len(parsed) == 2:
         changes["check_in"], changes["check_out"] = parsed
     elif parsed:

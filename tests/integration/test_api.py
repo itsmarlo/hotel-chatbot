@@ -144,6 +144,30 @@ def test_german_booking_explains_invalid_date_in_german(tmp_path: Path) -> None:
         assert invalid["debug"]["selected_route"] == "clarification"
 
 
+def test_german_fallback_uses_german_date_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOTEL_NLP_MODE", "off")
+    with TestClient(create_app(Settings(database_path=tmp_path / "german_guidance.db"))) as client:
+        payload = client.post("/chat", json={"message": "Ich brauche Hilfe"}).json()
+
+    assert payload["debug"]["selected_route"] == "guidance"
+    assert "DD.MM.YYYY" in payload["message"]
+    assert "YYYY-MM-DD" not in payload["message"]
+
+
+def test_english_fallback_also_requests_display_date_format(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOTEL_NLP_MODE", "off")
+    with TestClient(create_app(Settings(database_path=tmp_path / "english_guidance.db"))) as client:
+        payload = client.post("/chat", json={"message": "Help"}).json()
+
+    assert payload["debug"]["selected_route"] == "guidance"
+    assert "DD.MM.YYYY" in payload["message"]
+    assert "YYYY-MM-DD" not in payload["message"]
+
+
 def test_declining_quote_discards_booking_without_reservation(tmp_path: Path) -> None:
     settings = Settings(database_path=tmp_path / "api.db")
     with TestClient(create_app(settings)) as client:

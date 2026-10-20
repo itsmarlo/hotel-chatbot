@@ -26,6 +26,8 @@ def test_policy_retrieval_declines_unsupported_query() -> None:
 def test_multilingual_language_detection_and_name_boundary() -> None:
     assert language_of("Quels papiers dois-je présenter ?") == "fr"
     assert language_of("Ich heiße Alex Kim") == "de"
+    assert language_of("Ich brauche Hilfe") == "de"
+    assert language_of("Which room is available?") == "en"
     assert booking_changes("My name is Alex Kim and I need a room")["guest_name"] == "Alex Kim"
 
 
