@@ -1,9 +1,11 @@
 """Space entry point with grounded Qwen replies and guarded booking state."""
 
+import logging
 import os
 import sys
 from pathlib import Path
 
+import spaces
 import torch
 
 os.environ.setdefault("HOTEL_RAG_MODE", "semantic")
@@ -20,6 +22,31 @@ ROOT = Path(__file__).resolve().parent
 retriever = PolicyRetriever(
     ROOT / "data" / "knowledge_base" / "policies.json", semantic=True, device="cpu"
 )
+
+
+@spaces.GPU(duration=15)
+def gpu_embedding(question: str) -> list[list[float]]:
+    """Use a shared GPU for policy queries if the worker is available."""
+    model = retriever._model
+    model.to("cuda")
+    return model.encode([question], normalize_embeddings=True).tolist()
+
+
+gpu_available = True
+
+
+def encode_question(question: str) -> list[list[float]]:
+    global gpu_available
+    if gpu_available:
+        try:
+            return gpu_embedding(question)
+        except Exception:
+            logging.exception("ZeroGPU embedding unavailable; using CPU")
+            gpu_available = False
+    return retriever._model.encode([question], normalize_embeddings=True).tolist()
+
+
+retriever.query_encoder = encode_question
 qwen = QwenModel()
 
 

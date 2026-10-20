@@ -15,9 +15,9 @@ The account uses a free ZeroGPU Space because Hugging Face currently requires a 
 create Gradio Spaces on CPU Basic. ZeroGPU specifies Python 3.12.12 and adds Gradio extras that
 require Pydantic 2.12.5, so the Space has its own dependency list. The application's source
 modules are placed on the Python path directly by its entry point. Conversation state stays in
-the app process. Policy retrieval stays on CPU; Qwen weights are preloaded from the Hub at
-build time. CPU generation is slower, but it avoids the unavailable ZeroGPU workers seen in
-live tests.
+the app process. Policy query embeddings try ZeroGPU once and fall back to CPU if it is
+unavailable. Qwen weights are preloaded from the Hub at build time; Qwen reply generation
+runs on CPU because ZeroGPU workers were unavailable in live tests.
 
 To rebuild the exact public bundle:
 
