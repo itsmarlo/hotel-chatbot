@@ -1,43 +1,49 @@
-/* Single-surface hospitality chat: warm paper, dark ink, and quiet controls. */
+/* Bellhob's single chat surface uses one dark palette in every system color mode. */
 :root {
-  --bh-ink: #172b28;
-  --bh-muted: #66736d;
-  --bh-paper: #f4f1e9;
-  --bh-surface: #fffefa;
-  --bh-line: #dddcd3;
-  --bh-accent: #315d50;
-  --bh-accent-hover: #23483d;
+  --bh-bg: #0d1416;
+  --bh-surface: #142023;
+  --bh-surface-raised: #1b2a2d;
+  --bh-line: #304246;
+  --bh-text: #edf4f0;
+  --bh-muted: #b2c3bd;
+  --bh-mint: #b9ddc6;
+  --bh-user-ink: #17302a;
 }
-body, .gradio-container { background: var(--bh-paper) !important; }
-.gradio-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 100vh; padding: 0 !important; color: var(--bh-ink) !important; }
+body, .gradio-container { background: var(--bh-bg) !important; }
+.gradio-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 100vh; padding: 0 !important; color: var(--bh-text) !important; }
 .gradio-container > .main { max-width: 100% !important; padding: 0 !important; }
 #bellhob-shell { width: 100%; max-width: 800px; min-width: 0 !important; min-height: 100vh; margin: 0 auto; padding: 1.4rem 1.25rem 1rem; gap: 0; box-sizing: border-box; }
 #bellhob-header { align-items: center; justify-content: space-between; padding: 0 0 1.15rem; gap: 1rem; }
 #bellhob-header, #chat-panel, #starter-row, #composer-row { min-width: 0 !important; width: 100%; box-sizing: border-box; }
 #bellhob-header .gradio-html { min-width: 0 !important; flex: 1 1 auto; }
 .bh-identity { display: flex; align-items: center; gap: .85rem; }
-.bh-mark { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none; border-radius: .7rem; background: var(--bh-ink); color: #f7f2e7; font: 700 1.4rem Georgia, serif; }
-.bh-identity h1 { margin: 0; color: var(--bh-ink); font: 700 1.45rem/1.1 Georgia, serif; letter-spacing: -.025em; }
-.bh-identity p { margin: .25rem 0 0; color: var(--bh-muted); font-size: .8rem; }
-#new-chat { flex: 0 0 auto; min-width: 0 !important; border: 1px solid var(--bh-line); background: transparent; color: var(--bh-ink); }
-#new-chat:hover { border-color: var(--bh-accent); background: #eaece5; }
-#chat-panel { background: var(--bh-surface); border: 1px solid var(--bh-line); border-radius: .9rem; box-shadow: 0 8px 30px #25382d0a; padding: .6rem; gap: .5rem; }
-#chatbot { border: 0; background: var(--bh-surface); height: min(66vh, 560px) !important; }
-#chatbot .message.user { background: #e3eee6; color: var(--bh-ink); }
-#chatbot .message.bot { background: #f1f1eb; color: var(--bh-ink); }
+.bh-mark { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none; border: 1px solid #56756b; border-radius: .7rem; background: #213a35; color: var(--bh-mint); font: 700 1.4rem Georgia, serif; }
+.bh-identity h1 { margin: 0; color: var(--bh-text) !important; font: 700 1.45rem/1.1 Georgia, serif; letter-spacing: -.025em; }
+.bh-identity p { margin: .25rem 0 0; color: var(--bh-muted) !important; font-size: .8rem; }
+#new-chat { flex: 0 0 auto; min-width: 0 !important; border: 1px solid var(--bh-line) !important; background: var(--bh-surface-raised) !important; color: var(--bh-text) !important; }
+#new-chat:hover { border-color: var(--bh-mint) !important; background: #26393b !important; }
+#chat-panel { background: var(--bh-surface) !important; border: 1px solid var(--bh-line) !important; border-radius: .9rem; box-shadow: 0 20px 50px #00000026; padding: .6rem; gap: .5rem; }
+#chatbot { border: 0 !important; background: var(--bh-surface) !important; color: var(--bh-text) !important; height: min(66vh, 560px) !important; }
+#chatbot .message.bot { background: var(--bh-surface-raised) !important; border: 1px solid #34484a !important; color: var(--bh-text) !important; }
+#chatbot .message.user { background: var(--bh-mint) !important; border: 1px solid #d0e8d7 !important; color: var(--bh-user-ink) !important; }
+/* Gradio's Markdown typography has its own color rules, including in dark mode. */
+#chatbot .message.bot .prose, #chatbot .message.bot .prose * { color: var(--bh-text) !important; }
+#chatbot .message.user .prose, #chatbot .message.user .prose * { color: var(--bh-user-ink) !important; }
+#chatbot .message.bot .prose a { color: #b9e5ca !important; text-decoration: underline; }
 #starter-row { gap: .5rem; padding: .1rem .45rem .35rem; flex-wrap: wrap; }
-#starter-row button { flex: 1 1 9rem; min-width: 0 !important; border: 1px solid #bfcfc3; border-radius: 99px; background: #f5f9f5; color: var(--bh-accent); font-size: .83rem; font-weight: 600; }
-#starter-row button:hover { background: #e7f0e9; border-color: var(--bh-accent); }
+#starter-row button { flex: 1 1 9rem; min-width: 0 !important; border: 1px solid #4b6965 !important; border-radius: 99px; background: #203330 !important; color: #d5ece0 !important; font-size: .83rem; font-weight: 600; }
+#starter-row button:hover { background: #2b4840 !important; border-color: var(--bh-mint) !important; }
 #composer-row { gap: .55rem; padding: .2rem .3rem .3rem; align-items: stretch; }
-#message-box { min-width: 0 !important; flex: 1 1 0 !important; }
-#message-box textarea { font-size: .96rem; line-height: 1.4; }
-#send-button, #confirm-booking { background: var(--bh-accent); border-color: var(--bh-accent); color: #fff; }
-#send-button:hover, #confirm-booking:hover { background: var(--bh-accent-hover); border-color: var(--bh-accent-hover); }
+#message-box { min-width: 0 !important; flex: 1 1 0 !important; background: var(--bh-surface-raised) !important; border-color: var(--bh-line) !important; }
+#message-box textarea { background: var(--bh-surface-raised) !important; color: var(--bh-text) !important; font-size: .96rem; line-height: 1.4; }
+#message-box textarea::placeholder { color: #a6b8b2 !important; opacity: 1; }
+#send-button, #confirm-booking { background: var(--bh-mint) !important; border-color: var(--bh-mint) !important; color: var(--bh-user-ink) !important; font-weight: 700; }
+#send-button:hover, #confirm-booking:hover { background: #d2ecd9 !important; border-color: #d2ecd9 !important; }
 #send-button { flex: 0 0 5.5rem !important; min-width: 0 !important; }
 #confirm-booking { margin: 0 .3rem .3rem; }
 #starter-row button:focus-visible, #new-chat:focus-visible, #send-button:focus-visible,
-#confirm-booking:focus-visible, #message-box textarea:focus-visible { outline: 3px solid #ad6c45; outline-offset: 2px; }
-.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted); font-size: .75rem; line-height: 1.5; }
+#confirm-booking:focus-visible, #message-box textarea:focus-visible { outline: 3px solid #ebc88e; outline-offset: 2px; }
+.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted) !important; font-size: .75rem; line-height: 1.5; }
 @media (max-width: 600px) {
   #bellhob-shell { padding: .8rem .5rem 1rem; }
   #bellhob-header { padding: .25rem .35rem 1rem; }

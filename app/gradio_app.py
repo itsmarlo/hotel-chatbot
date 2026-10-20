@@ -9,6 +9,18 @@ from hotel_assistant.config import Settings
 from hotel_assistant.services.chat import ChatResult, ChatService
 
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
+UI_THEME = gr.themes.Base().set(
+    body_background_fill="#0d1416",
+    body_background_fill_dark="#0d1416",
+    body_text_color="#edf4f0",
+    body_text_color_dark="#edf4f0",
+    block_background_fill="#142023",
+    block_background_fill_dark="#142023",
+    input_background_fill="#1b2a2d",
+    input_background_fill_dark="#1b2a2d",
+    input_placeholder_color="#a6b8b2",
+    input_placeholder_color_dark="#a6b8b2",
+)
 WELCOME_MESSAGE = (
     "Welcome to Beit Zeitouna. I can help you plan a stay or answer a question "
     "about the hotel. What can I help with?"
@@ -165,4 +177,6 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
 
 if __name__ == "__main__":
     settings = Settings.from_env()
-    create_demo().launch(server_name="0.0.0.0", server_port=settings.ui_port, css=UI_CSS)
+    create_demo().launch(
+        server_name="0.0.0.0", server_port=settings.ui_port, css=UI_CSS, theme=UI_THEME
+    )
