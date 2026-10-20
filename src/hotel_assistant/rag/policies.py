@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -64,7 +65,14 @@ class Retrieval:
 class PolicyRetriever:
     """Retrieve a local policy and return its authored answer with a source ID."""
 
-    def __init__(self, path: Path, *, semantic: bool = False) -> None:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        semantic: bool = False,
+        device: str | None = None,
+        query_encoder: Callable[[str], Any] | None = None,
+    ) -> None:
         raw: list[dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
         if not raw:
             raise ValueError("policy corpus is empty")
@@ -79,6 +87,8 @@ class PolicyRetriever:
         ]
         self._model: Any = None
         self._index: Any = None
+        self._device = device
+        self.query_encoder = query_encoder
         self._indexed_policies: list[Policy] = []
         if semantic:
             self._build_semantic_index()
@@ -94,6 +104,7 @@ class PolicyRetriever:
             MODEL_NAME,
             revision=MODEL_REVISION,
             local_files_only=os.getenv("HOTEL_RAG_LOCAL_ONLY") == "1",
+            device=self._device,
         )
         texts = []
         for policy in self.policies:
@@ -125,9 +136,12 @@ class PolicyRetriever:
         if self._index is not None:
             np = importlib.import_module("numpy")
 
-            query = np.asarray(
-                self._model.encode([question], normalize_embeddings=True), dtype="float32"
+            encoded = (
+                self.query_encoder(question)
+                if self.query_encoder is not None
+                else self._model.encode([question], normalize_embeddings=True)
             )
+            query = np.asarray(encoded, dtype="float32").reshape(1, -1)
             scores, indices = self._index.search(query, 1)
             score = float(scores[0][0])
             if score < 0.38:

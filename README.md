@@ -213,19 +213,14 @@ after installing `.[presentation]`.
 
 ## 12. Hugging Face Spaces deployment
 
-For a Gradio Space:
+The public [Bellhob Space](https://huggingface.co/spaces/itsmarlo/bellhob-hotel-chatbot) uses
+the trained intent model and semantic policy retrieval. It is packaged separately so the
+public Space includes runtime code and synthetic assets without local databases, downloaded
+Qwen weights, or academic evaluation reports. See [deployment instructions](docs/deployment.md)
+for the exact rebuild command and ZeroGPU limitations.
 
-1. Create a new Space using the Gradio SDK and Python 3.11.
-2. Push this repository, including root `app.py`, `requirements.txt`, `pyproject.toml`, `src/`,
-   `app/`, `configs/`, `data/`, and `models/trained/`.
-3. Spaces installs `requirements.txt`, which installs the local package and its pinned runtime
-   dependencies.
-4. The Space starts `app.py`; Gradio binds to the platform-provided port when configured through
-   `HOTEL_UI_PORT`.
-
-The Docker build fetches the pinned embedding model and includes the trained artifacts. Spaces
-using `requirements.txt` run the keyword mode unless the `rag` extra is installed and
-`HOTEL_RAG_MODE=semantic` is set.
+The Space does not run Qwen; use section 9 for the full local Qwen academic mode. Its SQLite
+database is ephemeral, so demo bookings can disappear when the Space restarts.
 
 ## 13. Repository layout
 
