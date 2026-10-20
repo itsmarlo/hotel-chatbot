@@ -25,5 +25,20 @@ services:
     volumes:
       - hotel-data:/app/data/synthetic
 
+  qwen:
+    profiles: ["qwen"]
+    build: .
+    environment:
+      HOTEL_UI_PORT: "7860"
+      HOTEL_DATABASE_PATH: /app/data/synthetic/hotel.db
+      HOTEL_NLP_MODE: qwen
+      HOTEL_QWEN_MODEL_PATH: /app/models/cache/qwen
+      HOTEL_QWEN_LOCAL_ONLY: "1"
+    ports:
+      - "7861:7860"
+    volumes:
+      - hotel-data:/app/data/synthetic
+      - ./models/cache/qwen:/app/models/cache/qwen:ro
+
 volumes:
   hotel-data:

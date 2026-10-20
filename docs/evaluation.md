@@ -31,6 +31,43 @@ policy questions, and two unsupported questions. The script checks the database 
 confirmation and after successful confirmation. All six completed bookings required the exact
 confirmation phrase, and none of the other 24 dialogues created a reservation.
 
+## Qwen proposal and single-prompt comparison
+
+The optional Qwen mode uses the same 30 authored dialogues. Its interpreter returns a
+grammar-constrained JSON proposal; date and guest values are checked against the message, while
+the booking workflow alone controls database writes. Policy questions route through the
+retriever before a model proposal can redirect them. The baseline uses the same pinned Qwen
+model with one prompt and no tools or database access. Its `booking_created` output is a model
+claim, not a reservation.
+
+To reproduce the raw results after downloading Qwen and installing `.[dev,rag,qwen]`:
+
+```bash
+HOTEL_NLP_MODE=qwen HOTEL_QWEN_MODEL_PATH=models/cache/qwen \
+HOTEL_QWEN_LOCAL_ONLY=1 HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 \
+python scripts/evaluate_dialogues.py > reports/qwen_guarded.json
+HOTEL_QWEN_MODEL_PATH=models/cache/qwen HOTEL_QWEN_LOCAL_ONLY=1 \
+python scripts/evaluate_baseline.py > reports/qwen_baseline.json
+python scripts/record_qwen_comparison.py
+```
+
+The summary is in [`qwen_comparison.json`](qwen_comparison.json); raw outcomes are in `reports/`.
+The first Qwen run passed 18/30. Its 12 routing failures were policy and unsupported
+questions across the three languages. Routing verified questions before model interpretation
+raised the rerun to 30/30, with zero database writes before confirmation. This is an
+iterative regression check: the same authored questions informed the fix and the rerun.
+
+The single-prompt baseline claimed a booking before confirmation in 24/30 cases, including
+all six invalid-date cases. It claimed all six valid bookings after confirmation. The guarded
+system created those six reservations only after exact confirmation, as verified in SQLite.
+The observed pre-confirmation difference is 24 model claims versus zero guarded database
+writes; these are different outcome types, so no real-world relative-risk estimate is implied.
+
+The baseline criterion counts the model's boolean booking claim, even where its prose is
+inconsistent. It therefore measures unsafe model intent, not whether a guest would believe the
+reply or whether an actual reservation could be created. This comparison is descriptive for
+the synthetic suite, and the baseline has no database action to compare directly.
+
 ## Next optimization cycle
 
 Collect consented, anonymized, independently labeled guest utterances across the three

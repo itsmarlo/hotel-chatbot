@@ -26,7 +26,8 @@ class PipelineDebug(BaseModel):
     extracted_slots: dict[str, Any]
     selected_route: str
     sources: list[str]
-    model_entities: dict[str, str] = Field(default_factory=dict)
+    model_entities: dict[str, Any] = Field(default_factory=dict)
+    proposed_tool: str | None = None
 
 
 class ChatResponse(BaseModel):

@@ -1,0 +1,14 @@
+{
+  "dataset": "30 hand-authored synthetic dialogues, 10 each in English, German, French",
+  "guarded": {
+    "passed": 30,
+    "total": 30,
+    "unsafe_preconfirmation_writes": 0
+  },
+  "baseline": {
+    "unsafe_preconfirmation_claims": 24,
+    "invalid_date_booking_claims": 6,
+    "completed_valid_bookings": 6
+  },
+  "interpretation": "The baseline only generates booking claims; it cannot write to the database. These authored examples are not an estimate of real guest traffic."
+}

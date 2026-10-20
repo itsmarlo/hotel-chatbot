@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from threading import RLock
 from typing import Any
@@ -12,6 +14,7 @@ from hotel_assistant.config import Settings
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.dialogue.state import BookingState, TurnLimitExceeded
 from hotel_assistant.ml.inference import TrainedNLP
+from hotel_assistant.ml.qwen import BookingProposal, QwenModel
 from hotel_assistant.rag.policies import PolicyRetriever
 from hotel_assistant.services.booking import BookingWorkflow
 from hotel_assistant.services.interpret import booking_changes, is_booking_request, language_of
@@ -70,6 +73,7 @@ class ChatService:
         self,
         repository: HotelRepository | None = None,
         retriever: PolicyRetriever | None = None,
+        qwen: QwenModel | None = None,
         *,
         max_sessions: int = 1000,
         session_ttl_seconds: int = 1800,
@@ -86,13 +90,17 @@ class ChatService:
         )
         artifact_dir = _ROOT / "models" / "trained"
         encoder = getattr(self.retriever, "_model", None)
+        self.nlp_mode = os.getenv("HOTEL_NLP_MODE", "trained")
+        if self.nlp_mode not in {"trained", "qwen", "off"}:
+            raise ValueError("HOTEL_NLP_MODE must be trained, qwen, or off")
         self.nlp = (
             TrainedNLP(artifact_dir, encoder)
             if encoder is not None
             and (artifact_dir / "intent.joblib").is_file()
-            and os.getenv("HOTEL_NLP_MODE", "trained") == "trained"
+            and self.nlp_mode == "trained"
             else None
         )
+        self.qwen = (qwen or QwenModel()) if self.nlp_mode == "qwen" else None
         self.max_sessions = max_sessions
         self.session_ttl_seconds = session_ttl_seconds
         self._sessions: dict[str, _Session] = {}
@@ -148,13 +156,8 @@ class ChatService:
             "selected_route": "clarification",
             "sources": [],
             "model_entities": {},
+            "proposed_tool": None,
         }
-        if self.nlp is not None:
-            proposal = self.nlp.predict(message)
-            debug["detected_intent"] = proposal.intent
-            debug["confidence"] = round(proposal.confidence, 3)
-            debug["model_entities"] = proposal.entities
-
         def answer(text: str, route: str, intent: str) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
@@ -183,13 +186,76 @@ class ChatService:
                 "The unconfirmed booking request was discarded.", "booking_discarded", "BOOKING"
             )
 
+        if message.casefold() in _CONFIRM:
+            try:
+                session.workflow.confirm(message)
+                reservation = session.workflow.create_booking()
+            except ValueError as exc:
+                return answer(str(exc), "clarification", "BOOKING")
+            session.booked = True
+            confirmation_text = {
+                "en": "Booking confirmed. Reference",
+                "de": "Buchung bestätigt. Referenz",
+                "fr": "Réservation confirmée. Référence",
+            }[language]
+            return answer(
+                f"{confirmation_text}: {reservation.reference}.", "booking_created", "BOOKING"
+            )
+
+        # Policy questions with no explicit booking details can be answered from the
+        # verified knowledge base before a generative proposal can redirect them.
+        question = "?" in message or any(
+            word in message.casefold()
+            for word in ("what", "when", "how", "wann", "wie", "quel", "quand", "comment")
+        )
+        try:
+            initial_changes = booking_changes(message)
+        except ValueError as exc:
+            return answer(str(exc), "clarification", "BOOKING")
+        if (
+            question
+            and not initial_changes
+            and not is_booking_request(message, state, initial_changes)
+        ):
+            policy = self.retriever.retrieve(message, language)
+            if policy:
+                debug["sources"] = [policy.source]
+                return answer(
+                    f"{policy.answer}\n\nSource: Hotel policy [{policy.source}]",
+                    "policy",
+                    "HOTEL_POLICY",
+                )
+            return answer(
+                "I don't have a verified hotel policy for that question.",
+                "unsupported_policy",
+                "HOTEL_POLICY",
+            )
+
+        if self.nlp is not None:
+            proposal = self.nlp.predict(message)
+            debug["detected_intent"] = proposal.intent
+            debug["confidence"] = round(proposal.confidence, 3)
+            debug["model_entities"] = proposal.entities
+        qwen_proposal: BookingProposal | None = None
+        if self.qwen is not None:
+            try:
+                qwen_proposal = self.qwen.interpret(message, state.to_dict())
+            except (ValueError, RuntimeError) as exc:
+                debug["model_error"] = type(exc).__name__
+            else:
+                debug["detected_intent"] = qwen_proposal.intent
+                debug["model_entities"] = {
+                    key: value
+                    for key, value in qwen_proposal.model_dump().items()
+                    if key not in {"intent", "proposed_tool"} and value
+                }
+                debug["proposed_tool"] = qwen_proposal.proposed_tool
+
         # Only clear intent predictions influence routing. Slot tags stay advisory because
         # the tiny synthetic token dataset cannot safely authorize booking state updates.
         if (
-            self.nlp is not None
-            and debug["confidence"] >= 0.7
-            and not any(value is not None for value in state.to_raw_dict().values())
-        ):
+            (self.nlp is not None and debug["confidence"] >= 0.7) or qwen_proposal is not None
+        ) and not any(value is not None for value in state.to_raw_dict().values()):
             action_words = (
                 "cancel",
                 "call off",
@@ -221,36 +287,45 @@ class ChatService:
                     "GREETING",
                 )
 
-        if message.casefold() in _CONFIRM:
-            try:
-                session.workflow.confirm(message)
-                reservation = session.workflow.create_booking()
-            except ValueError as exc:
-                return answer(str(exc), "clarification", "BOOKING")
-            session.booked = True
-            confirmation_text = {
-                "en": "Booking confirmed. Reference",
-                "de": "Buchung bestätigt. Referenz",
-                "fr": "Réservation confirmée. Référence",
-            }[language]
-            return answer(
-                f"{confirmation_text}: {reservation.reference}.", "booking_created", "BOOKING"
-            )
-
-        try:
-            changes = booking_changes(message)
-        except ValueError as exc:
-            return answer(str(exc), "clarification", "BOOKING")
+        changes = initial_changes
+        if qwen_proposal is not None:
+            # The model may propose ISO dates, but only dates present in the user's
+            # message and agreed with by the deterministic parser can enter state.
+            raw_dates = set(re.findall(r"\b\d{4}-\d{2}-\d{2}\b", message))
+            for field_name in ("check_in", "check_out"):
+                suggested = getattr(qwen_proposal, field_name)
+                parsed = changes.get(field_name)
+                if suggested and (
+                    suggested not in raw_dates
+                    or not isinstance(parsed, date)
+                    or suggested != parsed.isoformat()
+                ):
+                    return answer(
+                        "Please clarify the booking dates in YYYY-MM-DD format.",
+                        "clarification",
+                        "BOOKING",
+                    )
+            parsed_guests = changes.get("guests")
+            if (
+                qwen_proposal.guests
+                and isinstance(parsed_guests, int)
+                and qwen_proposal.guests != parsed_guests
+            ):
+                return answer(
+                    "Please clarify the number of guests.", "clarification", "BOOKING"
+                )
+            if (
+                qwen_proposal.guest_name
+                and "guest_name" not in changes
+                and qwen_proposal.guest_name.casefold() in message.casefold()
+            ):
+                changes["guest_name"] = qwen_proposal.guest_name
         debug["extracted_slots"] = {
             key: value.isoformat() if hasattr(value, "isoformat") else value
             for key, value in changes.items()
         }
 
         policy = self.retriever.retrieve(message, language)
-        question = "?" in message or any(
-            word in message.casefold()
-            for word in ("what", "when", "how", "wann", "wie", "quel", "quand", "comment")
-        )
         if policy and question and not changes:
             debug["sources"] = [policy.source]
             return answer(
@@ -259,7 +334,9 @@ class ChatService:
                 "HOTEL_POLICY",
             )
 
-        if is_booking_request(message, state, changes):
+        if is_booking_request(message, state, changes) or (
+            qwen_proposal is not None and qwen_proposal.intent == "BOOKING"
+        ):
             if changes:
                 try:
                     state.update(**changes)

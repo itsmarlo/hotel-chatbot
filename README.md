@@ -9,7 +9,7 @@ through the UI and API. The fictional data and prices are for demonstration; no 
 
 ## 1. Project goal
 
-The final MVP will interpret natural-language booking requests, maintain booking state across
+The academic demo interprets natural-language booking requests, maintains booking state across
 turns, answer hotel-policy questions from local documents, and create reservations only after
 the user confirms a valid quote. An LLM will never be the source of truth for booking state.
 
@@ -18,7 +18,8 @@ the user confirms a valid quote. An LLM will never be the source of truth for bo
 ```text
 Gradio UI
   -> Conversation Controller                         (implemented)
-     -> Trained multilingual intent and BIO models   (implemented in semantic mode)
+     -> Trained multilingual intent and BIO models   (semantic mode)
+     -> Qwen constrained-JSON proposals              (optional academic mode)
      -> Conservative date and slot parser            (booking authority)
      -> Deterministic BookingState                    (implemented)
         -> Guarded booking workflow + SQLite         (implemented)
@@ -56,12 +57,12 @@ Booking and retrieval:
 - policy answers return authored wording and a source ID; unsupported questions are declined
 - semantic retrieval uses multilingual Sentence-Transformers and FAISS when enabled
 
-Still needed before a real hotel launch:
+Needed before a real hotel launch:
 
 - verified hotel policies, currency, taxes, payment and reservation operations
 - durable shared sessions, authentication and customer-data controls
 - realistic guest-language evaluations and calibrated confidence thresholds
-- the concept's Qwen constrained-JSON interpreter and 30-dialogue baseline comparison
+- consented guest testing and an external security and privacy review
 
 ## 4. Installation
 
@@ -102,8 +103,8 @@ python scripts/train_models.py
 
 Artifacts and a machine-readable evaluation report are committed under `models/trained/`. The
 selected intent model scored 15/18 test examples (83% accuracy; macro F1 0.83). This tiny,
-authored test is an integration check, not a production accuracy estimate. The concept's Qwen
-interpreter is a separate future component; this baseline does not imply Qwen was fine-tuned.
+authored test is an integration check, not a production accuracy estimate. Qwen is a separate
+pretrained model and was not fine-tuned on these examples.
 
 ## 7. NER-model training
 
@@ -120,7 +121,7 @@ keyword retrieval and works with the base install. To enable multilingual vector
 
 ```bash
 python -m pip install -e '.[rag]'
-HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python app.py
+HOTEL_RAG_MODE=semantic python app.py
 ```
 
 The semantic mode loads a pinned multilingual Sentence-Transformers model and builds an in-memory
@@ -132,7 +133,25 @@ questions are declined. This is a development check, not a real-traffic accuracy
 In semantic mode the same encoder also runs the trained intent classifier and advisory BIO
 tagger. The keyword mode works with the base install and skips those models.
 
-## 9. Run locally
+## 9. Qwen academic mode
+
+The concept's Qwen2.5-1.5B-Instruct interpreter emits grammar-constrained JSON with an intent,
+slot proposals, and a proposed tool. Pydantic checks the result. The deterministic parser
+cross-checks proposed dates against the user's ISO dates and asks for clarification on a
+disagreement. A proposed tool cannot create a reservation directly.
+
+```bash
+python -m pip install -e '.[dev,rag,qwen]'
+python scripts/download_qwen.py
+HOTEL_RAG_MODE=semantic HOTEL_NLP_MODE=qwen \
+HOTEL_QWEN_MODEL_PATH=models/cache/qwen HOTEL_QWEN_LOCAL_ONLY=1 python app.py
+```
+
+The large model download stays in ignored `models/cache/`. For Docker, first run the download
+script on the host, then run `docker compose --profile qwen up --build qwen` and open
+<http://127.0.0.1:7861>. The default `ui` service uses the faster trained classifier.
+
+## 10. Run locally
 
 Start the Gradio application:
 
@@ -160,7 +179,7 @@ uvicorn hotel_assistant.api.main:app --reload --port 8000
 
 API documentation is then available at <http://127.0.0.1:8000/docs>.
 
-## 10. Tests and quality checks
+## 11. Tests and quality checks
 
 ```bash
 pytest
@@ -177,10 +196,22 @@ dialogue check runs with:
 HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_dialogues.py
 ```
 
-It passed 30/30 authored scenarios in three languages. See [docs/evaluation.md](docs/evaluation.md)
-for the method and limits. The concept's single-prompt baseline comparison remains to be built.
+The trained mode passed 30/30 authored scenarios in three languages. The academic comparison
+also runs the guarded Qwen mode against a single-prompt Qwen baseline:
 
-## 11. Hugging Face Spaces deployment
+```bash
+HOTEL_NLP_MODE=qwen HOTEL_QWEN_MODEL_PATH=models/cache/qwen \
+HOTEL_QWEN_LOCAL_ONLY=1 HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 \
+python scripts/evaluate_dialogues.py
+HOTEL_QWEN_MODEL_PATH=models/cache/qwen HOTEL_QWEN_LOCAL_ONLY=1 \
+python scripts/evaluate_baseline.py
+```
+
+See [docs/evaluation.md](docs/evaluation.md) for the measured results and limits. The ten-slide
+development presentation can be rebuilt with `python scripts/build_development_presentation.py`
+after installing `.[presentation]`.
+
+## 12. Hugging Face Spaces deployment
 
 For a Gradio Space:
 
@@ -196,7 +227,7 @@ The Docker build fetches the pinned embedding model and includes the trained art
 using `requirements.txt` run the keyword mode unless the `rag` extra is installed and
 `HOTEL_RAG_MODE=semantic` is set.
 
-## 12. Repository layout
+## 13. Repository layout
 
 ```text
 app.py                         Hugging Face Spaces entry point

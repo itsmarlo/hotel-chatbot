@@ -17,3 +17,4 @@ models/*
 !models/trained/*
 reports/*
 !reports/.gitkeep
+!reports/qwen_*.json

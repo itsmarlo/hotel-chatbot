@@ -27,20 +27,21 @@ interface, then a single-prompt baseline and comparison.
 
 - Done: reproducible multilingual intent baseline and BIO token classifier with fixed splits.
 - Done: the intent model runs in semantic mode; token predictions are advisory only.
-- Use Qwen2.5-1.5B-Instruct to propose intent, slots and tool calls in constrained JSON.
-- Cross-check extracted dates with a deterministic parser and clarify disagreements.
+- Done: Qwen2.5-1.5B-Instruct proposes intent, slots and tool calls in grammar-constrained JSON.
+- Done: cross-check proposed dates with a deterministic parser and clarify disagreements.
 - Done: deterministic router selects booking, policy knowledge, or clarification.
-- Next: replace conservative parsing with constrained multilingual LLM proposals and date checks.
+- Done: use constrained multilingual LLM proposals in the optional Qwen academic mode.
 - Keep state and tool order authoritative; the model must not write reservations directly.
-- Measure CPU memory and latency before choosing an inference deployment method.
+- Next: benchmark CPU latency on deployment hardware and keep trained mode as the fast demo.
 
 ## Phase 5: Gradio and comparison
 
 - Done: connect the controller to Gradio and display grounded sources.
 - Done: run 30 synthetic multilingual dialogues through the controller; 30/30 pass, including
   pre-confirmation database checks. See `docs/evaluation.md` for the narrow scope.
-- Build a single-prompt baseline that runs on the same scripted dialogues but cannot alter
-  the guarded booking store.
+- Done: single-prompt Qwen baseline runs on the same 30 scripted dialogues without database access.
+- Done: first Qwen run 18/30; corrected policy routing; rerun 30/30, compared with 24/30
+  pre-confirmation booking claims in the single-prompt baseline.
 - Repeat the 30-dialogue evaluation with independently collected guest language and compare
   against the single-prompt baseline.
 

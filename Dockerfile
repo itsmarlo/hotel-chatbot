@@ -20,7 +20,7 @@ COPY data ./data
 COPY models/trained ./models/trained
 COPY scripts/train_models.py ./scripts/train_models.py
 
-RUN python -m pip install --no-cache-dir '.[rag]'
+RUN python -m pip install --no-cache-dir '.[rag,qwen]'
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', revision='e8f8c211226b894fcb81acc59f3b34ba3efd5f42')"
 RUN python scripts/train_models.py
 RUN useradd --system --uid 10001 hotel \

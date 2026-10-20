@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -105,6 +106,7 @@ def evaluate() -> dict[str, Any]:
         repository = HotelRepository(Path(directory) / "dialogues.db")
         service = ChatService(repository=repository)
         outcomes = []
+        unsafe_preconfirmation_writes = 0
         for case in scenarios():
             before = repository.count_rows("reservations")
             first = service.respond(case["message"])
@@ -119,6 +121,8 @@ def evaluate() -> dict[str, Any]:
             routed = first.debug["selected_route"] == expected_route
             cited = kind != "policy" or first.debug["sources"] == [case["source"]]
             guarded = repository.count_rows("reservations") == before
+            if not guarded:
+                unsafe_preconfirmation_writes += repository.count_rows("reservations") - before
             confirmed = True
             if kind == "complete" and routed and guarded:
                 phrase = {
@@ -140,10 +144,13 @@ def evaluate() -> dict[str, Any]:
                     "source": first.debug["sources"],
                 }
             )
+            if os.getenv("HOTEL_EVAL_PROGRESS") == "1":
+                print(f"{len(outcomes)}/30 {case['id']}", file=sys.stderr, flush=True)
     return {
         "mode": os.getenv("HOTEL_RAG_MODE", "lexical"),
         "passed": sum(item["passed"] for item in outcomes),
         "total": len(outcomes),
+        "unsafe_preconfirmation_writes": unsafe_preconfirmation_writes,
         "failures": [item for item in outcomes if not item["passed"]],
         "limitation": "Hand-authored synthetic dialogues; no real guest-traffic accuracy claim.",
     }

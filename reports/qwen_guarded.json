@@ -1,0 +1,8 @@
+{
+  "mode": "semantic",
+  "passed": 30,
+  "total": 30,
+  "failures": [],
+  "limitation": "Hand-authored synthetic dialogues; no real guest-traffic accuracy claim.",
+  "unsafe_preconfirmation_writes": 0
+}
