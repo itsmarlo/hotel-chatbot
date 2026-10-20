@@ -108,3 +108,63 @@ def test_unsupported_question_cannot_become_booking(
     result = service.respond("Do you offer scuba lessons?")
     assert result.debug["selected_route"] == "unsupported_policy"
     assert repository.count_rows("reservations") == 3
+
+
+def test_llm_rephrases_supported_policy_and_keeps_source(tmp_path: Path) -> None:
+    seen: list[tuple[str, str, str, str]] = []
+
+    def generate(message: str, fact: str, language: str, route: str) -> str:
+        seen.append((message, fact, language, route))
+        return (
+            "You can check in from 15:00 and check out by 11:00. "
+            "Please let reception know if you'll arrive late."
+        )
+
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "llm_policy.db"),
+        answer_generator=generate,
+    )
+    result = service.respond("When is check-in?")
+
+    assert result.message.startswith("You can check in from 15:00 and check out by 11:00.")
+    assert result.message.endswith("Source: Hotel policy [check-in]")
+    assert result.debug["response_mode"] == "llm"
+    assert seen[0][2:] == ("en", "policy")
+
+
+def test_llm_cannot_change_quote_or_claim_confirmation(tmp_path: Path) -> None:
+    def generate(*_args: str) -> str:
+        return "Your booking is confirmed."
+
+    repository = HotelRepository(tmp_path / "llm_booking.db")
+    service = ChatService(repository=repository, answer_generator=generate)
+    result = service.respond(
+        "Book a double room 2030-10-01 to 2030-10-02 for 2 guests. My name is Alex Kim."
+    )
+
+    assert result.debug["selected_route"] == "quote"
+    assert result.debug["response_mode"] == "template"
+    assert "confirm booking" in result.message
+    assert repository.count_rows("reservations") == 3
+
+
+def test_llm_bad_reply_falls_back_to_safe_clarification(tmp_path: Path) -> None:
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "llm_clarification.db"),
+        answer_generator=lambda *_: "Your reservation is confirmed.",
+    )
+    result = service.respond("I want to book a room")
+
+    assert result.debug["response_mode"] == "template"
+    assert "your name" in result.message
+
+
+def test_llm_cannot_merge_checkin_and_checkout_facts(tmp_path: Path) -> None:
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "llm_times.db"),
+        answer_generator=lambda *_: "Check-in begins at 15:00 and ends by 11:00.",
+    )
+    result = service.respond("When is check-in?")
+
+    assert result.debug["response_mode"] == "template"
+    assert "check-out is by 11:00" in result.message

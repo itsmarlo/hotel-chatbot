@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
+import re
 import time
+from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -21,6 +25,14 @@ from hotel_assistant.services.interpret import booking_changes, is_booking_reque
 _ROOT = Path(__file__).resolve().parents[3]
 _CONFIRM = {"confirm booking", "buchung bestätigen", "confirmer la réservation"}
 _DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen", "ne pas réserver"}
+_GENERATIVE_ROUTES = {"policy", "greeting", "guidance", "clarification"}
+_UNSAFE_REPLY = re.compile(
+    r"\b(?:booked|reserviert|réservée?|confirmed)\b|"
+    r"\b(?:booking|reservation|buchung|réservation)\s+(?:is\s+)?"
+    r"(?:created|complete|bestätigt|confirmée)\b",
+    re.IGNORECASE,
+)
+_FACT_NUMBERS = re.compile(r"\d+(?::\d+)?(?:\.\d+)*")
 _PROMPTS = {
     "en": {
         "guest_name": "your name (for example, 'my name is Alex Kim')",
@@ -89,6 +101,7 @@ class ChatService:
         repository: HotelRepository | None = None,
         retriever: PolicyRetriever | None = None,
         qwen: QwenModel | None = None,
+        answer_generator: Callable[[str, str, str, str], str] | None = None,
         *,
         max_sessions: int = 1000,
         session_ttl_seconds: int = 1800,
@@ -116,6 +129,7 @@ class ChatService:
             else None
         )
         self.qwen = (qwen or QwenModel()) if self.nlp_mode == "qwen" else None
+        self.answer_generator = answer_generator
         self.max_sessions = max_sessions
         self.session_ttl_seconds = session_ttl_seconds
         self._sessions: dict[str, _Session] = {}
@@ -172,10 +186,30 @@ class ChatService:
             "sources": [],
             "model_entities": {},
             "proposed_tool": None,
+            "response_mode": "template",
         }
         def answer(text: str, route: str, intent: str) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
+            friendly_clarification = route != "clarification" or text.startswith(
+                ("To continue", "Bitte geben Sie an:", "Pour continuer")
+            )
+            if (
+                self.answer_generator is not None
+                and route in _GENERATIVE_ROUTES
+                and friendly_clarification
+            ):
+                # The source citation is application-owned and never entrusted to the LLM.
+                body, separator, citation = text.partition("\n\nSource: Hotel policy ")
+                try:
+                    generated = self.answer_generator(message, body, language, route).strip()
+                except Exception as exc:
+                    logging.exception("Grounded reply generation failed; using verified text")
+                    debug["generation_error"] = type(exc).__name__
+                    generated = ""
+                if self._valid_generated_reply(body, generated, route):
+                    text = generated + (separator + citation if separator else "")
+                    debug["response_mode"] = "llm"
             return ChatResult(identifier, text, debug, state)
 
         try:
@@ -451,3 +485,21 @@ class ChatService:
             "guidance",
             "OTHER",
         )
+
+    @staticmethod
+    def _valid_generated_reply(fact: str, generated: str, route: str) -> bool:
+        """Reject empty, unrelated, or booking-claiming prose before displaying it."""
+        if not generated or len(generated) > 600 or _UNSAFE_REPLY.search(generated):
+            return False
+        if route == "policy" and Counter(_FACT_NUMBERS.findall(fact)) != Counter(
+            _FACT_NUMBERS.findall(generated)
+        ):
+            return False
+        # Small models sometimes merge two separate timings into one event.
+        if route == "policy":
+            for anchor in (r"check[- ]in", r"check[- ]out", r"départ"):
+                if re.search(anchor, fact, re.IGNORECASE) and not re.search(
+                    anchor, generated, re.IGNORECASE
+                ):
+                    return False
+        return "DD.MM.YYYY" not in fact or "DD.MM.YYYY" in generated

@@ -1,8 +1,7 @@
-"""Space entry point with the tested semantic retrieval and trained intent mode."""
+"""Space entry point with grounded Qwen replies and guarded booking state."""
 
 import importlib
 import importlib.util
-import logging
 import os
 import sys
 from pathlib import Path
@@ -14,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 spaces = importlib.import_module("spaces") if importlib.util.find_spec("spaces") else None
 
 from app.gradio_app import UI_CSS, UI_THEME, create_demo  # noqa: E402
+from hotel_assistant.ml.qwen import QwenModel  # noqa: E402
 from hotel_assistant.rag.policies import PolicyRetriever  # noqa: E402
 from hotel_assistant.services.chat import ChatService  # noqa: E402
 
@@ -21,36 +21,21 @@ ROOT = Path(__file__).resolve().parent
 retriever = PolicyRetriever(
     ROOT / "data" / "knowledge_base" / "policies.json", semantic=True, device="cpu"
 )
+qwen = QwenModel()
+if spaces is not None:
+    # ZeroGPU records CUDA placement at module load and supplies the real GPU on calls.
+    qwen.model.to("cuda")
 
 
-def gpu_embedding(question: str) -> list[list[float]]:
-    """Encode one query in a stateless ZeroGPU worker when hardware is available."""
-    model = retriever._model
-    model.to("cuda")
-    return model.encode([question], normalize_embeddings=True).tolist()
+def generate_reply(message: str, fact: str, language: str, route: str) -> str:
+    return qwen.generate_reply(message, fact, language, route)
 
 
 if spaces is not None:
-    gpu_embedding = spaces.GPU(duration=20)(gpu_embedding)
+    generate_reply = spaces.GPU(duration=40)(generate_reply)
 
 
-gpu_available = True
-
-
-def encode_question(question: str) -> list[list[float]]:
-    global gpu_available
-    if gpu_available and spaces is not None:
-        try:
-            return gpu_embedding(question)
-        except Exception:
-            # Keep retrieval available if the shared ZeroGPU worker fails.
-            logging.exception("ZeroGPU query embedding failed; using CPU")
-            gpu_available = False
-    return retriever._model.encode([question], normalize_embeddings=True).tolist()
-
-
-retriever.query_encoder = encode_question
-demo = create_demo(chat_service=ChatService(retriever=retriever))
+demo = create_demo(chat_service=ChatService(retriever=retriever, answer_generator=generate_reply))
 
 if __name__ == "__main__":
     demo.launch(

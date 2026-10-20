@@ -215,9 +215,11 @@ after installing `.[presentation]`.
 ## 12. Hugging Face Spaces deployment
 
 The public [Bellhob Space](https://huggingface.co/spaces/itsmarlo/bellhob-hotel-chatbot) uses
-the trained intent model and semantic policy retrieval. It is packaged separately so the
-public Space includes runtime code and synthetic assets without local databases, downloaded
-Qwen weights, or academic evaluation reports. See [deployment instructions](docs/deployment.md)
+the trained intent model, semantic policy retrieval, and Qwen-generated conversational
+replies grounded in verified text. Booking quotes and confirmations remain controlled by the
+workflow. It is packaged separately so the public Space includes runtime code and synthetic
+assets without local databases, bundled Qwen weights, or academic evaluation reports.
+See [deployment instructions](docs/deployment.md).
 for the exact rebuild command and ZeroGPU limitations.
 
 The Space does not run Qwen; use section 9 for the full local Qwen academic mode. Its SQLite
