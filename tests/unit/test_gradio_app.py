@@ -6,6 +6,7 @@ from app.gradio_app import (
     create_demo,
     create_session_state,
     format_booking_summary,
+    render_booking_summary,
     reset_conversation,
 )
 
@@ -46,5 +47,15 @@ def test_reset_conversation_returns_fresh_state() -> None:
     assert message == ""
     assert session_id is None
     assert fresh_state.guest_name is None
-    assert summary["Guest name"] == "Not provided"
+    assert "Not provided" in summary
     assert demo_details == {}
+
+
+def test_booking_summary_escapes_guest_text() -> None:
+    state = create_session_state()
+    state.update(guest_name="<script>alert(1)</script>")
+
+    rendered = render_booking_summary(state)
+
+    assert "<script>" not in rendered
+    assert "&lt;script&gt;" in rendered

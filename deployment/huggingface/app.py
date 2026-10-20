@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 spaces = importlib.import_module("spaces") if importlib.util.find_spec("spaces") else None
 
-from app.gradio_app import create_demo  # noqa: E402
+from app.gradio_app import UI_CSS, create_demo  # noqa: E402
 from hotel_assistant.rag.policies import PolicyRetriever  # noqa: E402
 from hotel_assistant.services.chat import ChatService  # noqa: E402
 
@@ -53,4 +53,4 @@ retriever.query_encoder = encode_question
 demo = create_demo(chat_service=ChatService(retriever=retriever))
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")))
+    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")), css=UI_CSS)
