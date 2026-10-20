@@ -45,7 +45,7 @@ Implemented:
 - synthetic intent starter covering all six intents
 - synthetic BIO-format NER starter covering all six entity types
 - fixed-split multilingual intent examples, reproducible training, and versioned model artifacts
-- Gradio shell with conversation, booking summary, new-conversation control, and demo panel
+- Chat-only Gradio interface with starter prompts, a new-chat control, and guarded quote confirmation
 - root `app.py` and `requirements.txt` for Hugging Face Spaces
 - unit, ML-data-contract, and integration tests
 

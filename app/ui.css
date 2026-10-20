@@ -1,50 +1,48 @@
-/* Bellhob's interface uses a restrained palette and compact spacing for chat-first use. */
-:root { --bh-ink: #20342f; --bh-muted: #65736f; --bh-paper: #f7f5f0; --bh-line: #deded5; --bh-accent: #9c573b; }
-.gradio-container { max-width: 1200px !important; margin: 0 auto !important; background: var(--bh-paper) !important; color: var(--bh-ink) !important; }
-#bellhob-shell { padding: 1.5rem 1rem 2.5rem; }
-.bh-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1.1rem 0 1.5rem; border-bottom:1px solid var(--bh-line); margin-bottom:1.5rem; }
-.bh-brand { display:flex; gap:.85rem; align-items:center; }
-.bh-mark { display:grid; place-items:center; width:2.75rem; height:2.75rem; border:1px solid var(--bh-ink); border-radius:.45rem; font-size:1.35rem; }
-.bh-name { font-family: Georgia, serif; font-size:1.6rem; line-height:1.05; letter-spacing:-.03em; font-weight:700; }
-.bh-subtitle { color:var(--bh-muted); font-size:.84rem; margin-top:.25rem; }
-.bh-status { border:1px solid var(--bh-line); border-radius:99px; padding:.45rem .75rem; font-size:.76rem; color:var(--bh-muted); white-space:nowrap; }
-.bh-status-dot { display:inline-block; width:.5rem; height:.5rem; border-radius:50%; background:#477c62; margin-right:.4rem; }
-.bh-intro { margin-bottom:1.15rem; }
-.bh-intro h1 { font-family: Georgia, serif; font-size:clamp(1.65rem,3vw,2.3rem); margin:0 0 .4rem; line-height:1.15; color:var(--bh-ink); }
-.bh-intro p { margin:0; color:var(--bh-muted); max-width:42rem; line-height:1.5; }
-.bh-eyebrow { text-transform:uppercase; font-size:.68rem; letter-spacing:.12em; font-weight:700; color:var(--bh-accent); margin-bottom:.45rem; }
-#chatbot { border:1px solid var(--bh-line); border-radius:.6rem; overflow:hidden; background:#fff; }
-#message-box textarea { font-size:1rem; }
-#send-button { min-width:6.5rem; }
-#prompt-row { gap:.45rem; }
-#prompt-row button { font-size:.84rem; border-color:var(--bh-line); color:var(--bh-ink); background:#fff; text-align:left; }
-#prompt-row button:hover { border-color:var(--bh-accent); }
-#prompt-row button:focus-visible, #send-button:focus-visible, #confirm-booking:focus-visible,
-#new-conversation:focus-visible { outline:3px solid var(--bh-accent); outline-offset:2px; }
-#confirm-booking { margin-top:.35rem; }
-#new-conversation { align-self:flex-start; }
-.bh-panel { scroll-margin-top:1rem; }
-.bh-panel + div { margin-top:.75rem; }
-.bh-panel { border:1px solid var(--bh-line); border-radius:.6rem; background:#fff; padding:1.15rem; }
-.bh-panel h2 { font-family:Georgia, serif; font-size:1.2rem; margin:0 0 .3rem; color:var(--bh-ink); }
-.bh-panel-copy { color:var(--bh-muted); font-size:.82rem; line-height:1.45; margin:0 0 1rem; }
-.bh-progress { display:flex; gap:.32rem; margin:.9rem 0 .4rem; }
-.bh-progress span { height:.32rem; flex:1; background:#e9e9e4; border-radius:99px; }
-.bh-progress span.filled { background:#477c62; }
-.bh-progress-label { font-size:.76rem; color:var(--bh-muted); margin-bottom:1rem; }
-.bh-details { margin:0; }
-.bh-detail { display:flex; justify-content:space-between; gap:.8rem; padding:.7rem 0; border-top:1px solid #efefea; font-size:.82rem; }
-.bh-detail dt { color:var(--bh-muted); }
-.bh-detail dd { margin:0; font-weight:600; text-align:right; overflow-wrap:anywhere; max-width:60%; }
-.bh-detail dd.empty { color:#89938e; font-weight:400; }
-.bh-note { margin-top:1rem; padding:.8rem; background:#f7f5f0; border-radius:.35rem; color:var(--bh-muted); font-size:.76rem; line-height:1.45; }
-.bh-footnote { color:var(--bh-muted); font-size:.75rem; line-height:1.45; margin-top:.8rem; }
-#new-conversation { margin-top:.25rem; }
-@media (max-width: 760px) {
-  #bellhob-shell { padding:1rem .5rem 2rem; }
-  .bh-header { padding-top:.4rem; }
-  .bh-status { display:none; }
-  #chatbot { min-height:360px; }
-  #prompt-row { flex-wrap:wrap; }
-  #prompt-row button { flex:1 1 9rem; }
+/* Single-surface hospitality chat: warm paper, dark ink, and quiet controls. */
+:root {
+  --bh-ink: #172b28;
+  --bh-muted: #66736d;
+  --bh-paper: #f4f1e9;
+  --bh-surface: #fffefa;
+  --bh-line: #dddcd3;
+  --bh-accent: #315d50;
+  --bh-accent-hover: #23483d;
+}
+body, .gradio-container { background: var(--bh-paper) !important; }
+.gradio-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 100vh; padding: 0 !important; color: var(--bh-ink) !important; }
+.gradio-container > .main { max-width: 100% !important; padding: 0 !important; }
+#bellhob-shell { width: 100%; max-width: 800px; min-width: 0 !important; min-height: 100vh; margin: 0 auto; padding: 1.4rem 1.25rem 1rem; gap: 0; box-sizing: border-box; }
+#bellhob-header { align-items: center; justify-content: space-between; padding: 0 0 1.15rem; gap: 1rem; }
+#bellhob-header, #chat-panel, #starter-row, #composer-row { min-width: 0 !important; width: 100%; box-sizing: border-box; }
+#bellhob-header .gradio-html { min-width: 0 !important; flex: 1 1 auto; }
+.bh-identity { display: flex; align-items: center; gap: .85rem; }
+.bh-mark { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none; border-radius: .7rem; background: var(--bh-ink); color: #f7f2e7; font: 700 1.4rem Georgia, serif; }
+.bh-identity h1 { margin: 0; color: var(--bh-ink); font: 700 1.45rem/1.1 Georgia, serif; letter-spacing: -.025em; }
+.bh-identity p { margin: .25rem 0 0; color: var(--bh-muted); font-size: .8rem; }
+#new-chat { flex: 0 0 auto; min-width: 0 !important; border: 1px solid var(--bh-line); background: transparent; color: var(--bh-ink); }
+#new-chat:hover { border-color: var(--bh-accent); background: #eaece5; }
+#chat-panel { background: var(--bh-surface); border: 1px solid var(--bh-line); border-radius: .9rem; box-shadow: 0 8px 30px #25382d0a; padding: .6rem; gap: .5rem; }
+#chatbot { border: 0; background: var(--bh-surface); height: min(66vh, 560px) !important; }
+#chatbot .message.user { background: #e3eee6; color: var(--bh-ink); }
+#chatbot .message.bot { background: #f1f1eb; color: var(--bh-ink); }
+#starter-row { gap: .5rem; padding: .1rem .45rem .35rem; flex-wrap: wrap; }
+#starter-row button { flex: 1 1 9rem; min-width: 0 !important; border: 1px solid #bfcfc3; border-radius: 99px; background: #f5f9f5; color: var(--bh-accent); font-size: .83rem; font-weight: 600; }
+#starter-row button:hover { background: #e7f0e9; border-color: var(--bh-accent); }
+#composer-row { gap: .55rem; padding: .2rem .3rem .3rem; align-items: stretch; }
+#message-box { min-width: 0 !important; flex: 1 1 0 !important; }
+#message-box textarea { font-size: .96rem; line-height: 1.4; }
+#send-button, #confirm-booking { background: var(--bh-accent); border-color: var(--bh-accent); color: #fff; }
+#send-button:hover, #confirm-booking:hover { background: var(--bh-accent-hover); border-color: var(--bh-accent-hover); }
+#send-button { flex: 0 0 5.5rem !important; min-width: 0 !important; }
+#confirm-booking { margin: 0 .3rem .3rem; }
+#starter-row button:focus-visible, #new-chat:focus-visible, #send-button:focus-visible,
+#confirm-booking:focus-visible, #message-box textarea:focus-visible { outline: 3px solid #ad6c45; outline-offset: 2px; }
+.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted); font-size: .75rem; line-height: 1.5; }
+@media (max-width: 600px) {
+  #bellhob-shell { padding: .8rem .5rem 1rem; }
+  #bellhob-header { padding: .25rem .35rem 1rem; }
+  #chat-panel { border-radius: .65rem; padding: .35rem; }
+  #chatbot { height: max(320px, calc(100dvh - 370px)) !important; }
+  #starter-row button { flex: 1 1 8rem; }
+  #send-button { flex-basis: 4.5rem !important; }
 }
