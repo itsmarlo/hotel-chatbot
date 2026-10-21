@@ -10,22 +10,22 @@ from hotel_assistant.services.chat import ChatResult, ChatService
 
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
 UI_THEME = gr.themes.Base().set(
-    background_fill_primary="#fffdfa",
-    background_fill_primary_dark="#fffdfa",
-    background_fill_secondary="#f7f6f2",
-    background_fill_secondary_dark="#f7f6f2",
-    body_background_fill="#f7f6f2",
-    body_background_fill_dark="#f7f6f2",
-    body_text_color="#18394e",
-    body_text_color_dark="#18394e",
-    block_background_fill="#fffdfa",
-    block_background_fill_dark="#fffdfa",
-    panel_background_fill="#fffdfa",
-    panel_background_fill_dark="#fffdfa",
+    background_fill_primary="#ffffff",
+    background_fill_primary_dark="#ffffff",
+    background_fill_secondary="#e0e0e0",
+    background_fill_secondary_dark="#e0e0e0",
+    body_background_fill="#e0e0e0",
+    body_background_fill_dark="#e0e0e0",
+    body_text_color="#263238",
+    body_text_color_dark="#263238",
+    block_background_fill="#ffffff",
+    block_background_fill_dark="#ffffff",
+    panel_background_fill="#ffffff",
+    panel_background_fill_dark="#ffffff",
     input_background_fill="#ffffff",
     input_background_fill_dark="#ffffff",
-    input_placeholder_color="#667985",
-    input_placeholder_color_dark="#667985",
+    input_placeholder_color="#52616b",
+    input_placeholder_color_dark="#52616b",
 )
 WELCOME_MESSAGE = (
     "Welcome to Beit Zeitouna. I can help with a room, hotel details, or ideas for "
@@ -123,7 +123,6 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                     '<div><h1>Bellhob</h1><p>Beit Zeitouna · Beirut</p></div>'
                     '</div>'
                 )
-                reset = gr.Button("New chat", variant="secondary", size="sm", elem_id="new-chat")
 
             gr.HTML(
                 '<div class="bh-intro">'
@@ -136,6 +135,11 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             session = gr.State(value=None)
             pending_confirmation = gr.State(value="")
             with gr.Column(elem_id="chat-panel"):
+                with gr.Row(elem_id="chat-actions"):
+                    reset = gr.Button(
+                        "Clear conversation", variant="secondary", size="sm",
+                        elem_id="clear-conversation",
+                    )
                 chatbot = gr.Chatbot(
                     value=fresh_chat()[0],
                     show_label=False,
