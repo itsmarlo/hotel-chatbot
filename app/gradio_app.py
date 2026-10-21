@@ -12,20 +12,20 @@ UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
 UI_THEME = gr.themes.Base().set(
     background_fill_primary="#ffffff",
     background_fill_primary_dark="#ffffff",
-    background_fill_secondary="#e0e0e0",
-    background_fill_secondary_dark="#e0e0e0",
-    body_background_fill="#e0e0e0",
-    body_background_fill_dark="#e0e0e0",
-    body_text_color="#263238",
-    body_text_color_dark="#263238",
+    background_fill_secondary="#f7f6fb",
+    background_fill_secondary_dark="#f7f6fb",
+    body_background_fill="#f7f6fb",
+    body_background_fill_dark="#f7f6fb",
+    body_text_color="#26243a",
+    body_text_color_dark="#26243a",
     block_background_fill="#ffffff",
     block_background_fill_dark="#ffffff",
     panel_background_fill="#ffffff",
     panel_background_fill_dark="#ffffff",
     input_background_fill="#ffffff",
     input_background_fill_dark="#ffffff",
-    input_placeholder_color="#52616b",
-    input_placeholder_color_dark="#52616b",
+    input_placeholder_color="#777389",
+    input_placeholder_color_dark="#777389",
 )
 WELCOME_MESSAGE = (
     "Welcome to Beit Zeitouna. I can help with a room, hotel details, or ideas for "
@@ -143,7 +143,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 chatbot = gr.Chatbot(
                     value=fresh_chat()[0],
                     show_label=False,
-                    height=430,
+                    height=360,
                     elem_id="chatbot",
                     layout="bubble",
                     buttons=[],
