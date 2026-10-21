@@ -10,12 +10,18 @@ from hotel_assistant.services.chat import ChatResult, ChatService
 
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
 UI_THEME = gr.themes.Base().set(
+    background_fill_primary="#ffffff",
+    background_fill_primary_dark="#ffffff",
+    background_fill_secondary="#f4f7fb",
+    background_fill_secondary_dark="#f4f7fb",
     body_background_fill="#f4f6f8",
     body_background_fill_dark="#f4f6f8",
     body_text_color="#183657",
     body_text_color_dark="#183657",
     block_background_fill="#ffffff",
     block_background_fill_dark="#ffffff",
+    panel_background_fill="#ffffff",
+    panel_background_fill_dark="#ffffff",
     input_background_fill="#ffffff",
     input_background_fill_dark="#ffffff",
     input_placeholder_color="#697b8f",
@@ -119,9 +125,9 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
 
             gr.HTML(
                 '<div class="bh-intro">'
-                '<p class="bh-eyebrow">YOUR DIGITAL CONCIERGE</p>'
-                '<h2>A stay shaped around you.</h2>'
-                '<p>Explore rooms and hotel details with Bellhob.</p>'
+                '<p class="bh-eyebrow">GUEST SERVICES</p>'
+                '<h2>How can we help with your stay?</h2>'
+                '<p>Ask Bellhob about rooms, reservations, or hotel information.</p>'
                 '</div>'
             )
 

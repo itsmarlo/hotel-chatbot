@@ -1,9 +1,9 @@
-/* Bellhob uses a quiet hotel palette while keeping its own identity. */
+/* Bellhob uses a light Fiori-style workspace with its own hotel identity. */
 :root {
   --bh-navy: #123b68;
   --bh-navy-deep: #0d294b;
   --bh-blue-soft: #eef3f8;
-  --bh-canvas: #f4f6f8;
+  --bh-canvas: #f4f7fb;
   --bh-white: #fff;
   --bh-line: #d9e1e9;
   --bh-text: #183657;
@@ -11,7 +11,7 @@
   --bh-gold: #b3915f;
 }
 
-body, .gradio-container { background: var(--bh-canvas) !important; }
+body, .gradio-container { background: var(--bh-canvas) !important; color-scheme: light; }
 .gradio-container {
   width: 100% !important;
   max-width: 100% !important;
@@ -24,11 +24,11 @@ body, .gradio-container { background: var(--bh-canvas) !important; }
 
 #bellhob-shell {
   width: 100%;
-  max-width: 1020px;
+  max-width: 100%;
   min-width: 0 !important;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 1.4rem 1.5rem 1rem;
+  padding: 0 0 1rem;
   gap: 0;
   box-sizing: border-box;
 }
@@ -41,10 +41,17 @@ body, .gradio-container { background: var(--bh-canvas) !important; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: .1rem .25rem 1.05rem;
-  border-bottom: 1px solid var(--bh-line);
+  min-height: 3.75rem;
+  padding: .55rem max(1.25rem, calc((100% - 1080px) / 2));
+  background: var(--bh-navy-deep) !important;
+  box-shadow: 0 2px 7px #0d294b21;
 }
-#bellhob-header .gradio-html { min-width: 0 !important; flex: 1 1 auto; }
+#bellhob-header .gradio-html {
+  min-width: 0 !important;
+  flex: 1 1 auto;
+  border: 0 !important;
+  background: transparent !important;
+}
 .bh-identity { display: flex; align-items: center; gap: .85rem; }
 .bh-mark {
   display: grid;
@@ -53,20 +60,19 @@ body, .gradio-container { background: var(--bh-canvas) !important; }
   height: 2.7rem;
   flex: none;
   border-radius: .3rem;
-  background: var(--bh-navy);
+  background: #ffffff1c;
   color: var(--bh-white);
-  box-shadow: inset 0 -3px 0 var(--bh-gold);
+  box-shadow: inset 0 -2px 0 var(--bh-gold);
   font: 700 1.5rem Georgia, serif;
 }
 .bh-identity h1 {
   margin: 0;
-  color: var(--bh-navy-deep) !important;
-  font: 700 1.5rem/1.1 Georgia, serif;
-  letter-spacing: -.02em;
+  color: var(--bh-white) !important;
+  font: 700 1.15rem/1.1 Arial, Helvetica, sans-serif;
 }
 .bh-identity p {
   margin: .25rem 0 0;
-  color: var(--bh-muted) !important;
+  color: #d5e4f2 !important;
   font-size: .76rem;
   letter-spacing: .055em;
   text-transform: uppercase;
@@ -74,44 +80,55 @@ body, .gradio-container { background: var(--bh-canvas) !important; }
 #new-chat {
   flex: 0 0 auto;
   min-width: 0 !important;
-  border: 1px solid var(--bh-line) !important;
+  border: 1px solid #94b1ce !important;
   border-radius: .35rem !important;
-  background: var(--bh-white) !important;
-  color: var(--bh-navy) !important;
+  background: transparent !important;
+  color: var(--bh-white) !important;
   font-weight: 600;
 }
-#new-chat:hover { border-color: var(--bh-navy) !important; background: var(--bh-blue-soft) !important; }
+#new-chat:hover { border-color: var(--bh-white) !important; background: #ffffff1c !important; }
 
-.bh-intro { padding: 1.65rem .25rem 1.45rem; }
+.bh-intro {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.35rem 1.25rem 1.2rem;
+}
 .bh-intro .bh-eyebrow {
   margin: 0 0 .45rem;
   color: var(--bh-navy) !important;
-  font-size: .7rem;
+  font-size: .72rem;
   font-weight: 800;
-  letter-spacing: .17em;
+  letter-spacing: .11em;
 }
 .bh-intro h2 {
   margin: 0;
   color: var(--bh-navy-deep) !important;
-  font: 500 clamp(1.8rem, 3vw, 2.55rem)/1.16 Georgia, serif;
-  letter-spacing: -.025em;
+  font: 700 clamp(1.45rem, 2.4vw, 1.85rem)/1.2 Arial, Helvetica, sans-serif;
 }
-.bh-intro > p:last-child { margin: .55rem 0 0; color: var(--bh-muted) !important; font-size: .96rem; }
+.bh-intro > p:last-child { margin: .4rem 0 0; color: var(--bh-muted) !important; font-size: .92rem; }
 
 #chat-panel {
+  max-width: 1040px;
+  margin: 0 auto;
   gap: .55rem;
   padding: .75rem;
   border: 1px solid var(--bh-line) !important;
-  border-top: 3px solid var(--bh-navy) !important;
-  border-radius: .55rem;
+  border-radius: .35rem;
   background: var(--bh-white) !important;
-  box-shadow: 0 12px 36px #17365512;
+  box-shadow: 0 2px 10px #1736550f;
 }
 #chatbot {
-  height: min(57vh, 560px) !important;
+  height: min(62vh, 620px) !important;
   border: 0 !important;
   background: var(--bh-white) !important;
   color: var(--bh-text) !important;
+}
+#chatbot .bubble-wrap,
+#chatbot .panel-wrap,
+#chatbot .wrapper,
+#chatbot .message-wrap {
+  background: var(--bh-white) !important;
+  color-scheme: light;
 }
 #chatbot .message.bot {
   border: 1px solid var(--bh-line) !important;
@@ -215,15 +232,15 @@ body, .gradio-container { background: var(--bh-canvas) !important; }
   outline: 3px solid var(--bh-gold);
   outline-offset: 2px;
 }
-.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted) !important; font-size: .76rem; line-height: 1.5; }
+.bh-footnote { margin: .8rem 0 0; text-align: center; color: var(--bh-muted) !important; font-size: .76rem; line-height: 1.5; }
 
 @media (max-width: 600px) {
-  #bellhob-shell { padding: .8rem .55rem 1rem; }
-  #bellhob-header { padding: .15rem .2rem .8rem; }
-  .bh-intro { padding: 1.15rem .2rem 1rem; }
+  #bellhob-shell { padding: 0 0 1rem; }
+  #bellhob-header { padding: .55rem .8rem; }
+  .bh-intro { padding: 1.15rem .8rem 1rem; }
   .bh-intro > p:last-child { font-size: .85rem; }
-  #chat-panel { padding: .4rem; }
-  #chatbot { height: max(300px, calc(100dvh - 365px)) !important; }
+  #chat-panel { width: calc(100% - 1rem); padding: .4rem; }
+  #chatbot { height: max(300px, calc(100dvh - 310px)) !important; }
   #starter-row button { flex: 1 1 8rem; }
   #send-button { flex-basis: 4.75rem !important; }
 }
