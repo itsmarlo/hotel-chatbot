@@ -168,3 +168,15 @@ def test_llm_cannot_merge_checkin_and_checkout_facts(tmp_path: Path) -> None:
 
     assert result.debug["response_mode"] == "template"
     assert "check-out is by 11:00" in result.message
+
+
+def test_llm_cannot_request_extra_booking_fields(tmp_path: Path) -> None:
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "llm_extra_slot.db"),
+        answer_generator=lambda *_: "Bitte nennen Sie Ihren Namen und Ihr Reisedatum.",
+    )
+    result = service.respond("Ich möchte ein Zimmer buchen")
+
+    assert result.debug["response_mode"] == "template"
+    assert "Ihren Namen" in result.message
+    assert "Datum" not in result.message

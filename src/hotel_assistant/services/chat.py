@@ -33,6 +33,13 @@ _UNSAFE_REPLY = re.compile(
     re.IGNORECASE,
 )
 _FACT_NUMBERS = re.compile(r"\d+(?::\d+)?(?:\.\d+)*")
+_BOOKING_SLOT_TERMS = {
+    "guest_name": re.compile(r"\b(?:name[n]?|nom)\b", re.IGNORECASE),
+    "check_in": re.compile(r"check[- ]?in|anreise|arriv", re.IGNORECASE),
+    "check_out": re.compile(r"check[- ]?out|abreise|départ", re.IGNORECASE),
+    "date": re.compile(r"DD\.MM\.YYYY|datum|date", re.IGNORECASE),
+    "guests": re.compile(r"guest|gäste|people|personne", re.IGNORECASE),
+}
 _PROMPTS = {
     "en": {
         "guest_name": "your name (for example, 'my name is Alex Kim')",
@@ -502,4 +509,13 @@ class ChatService:
                     anchor, generated, re.IGNORECASE
                 ):
                     return False
+        if route == "clarification":
+            requested = {
+                name for name, pattern in _BOOKING_SLOT_TERMS.items() if pattern.search(fact)
+            }
+            mentioned = {
+                name for name, pattern in _BOOKING_SLOT_TERMS.items() if pattern.search(generated)
+            }
+            if not requested.issubset(mentioned) or not mentioned.issubset(requested):
+                return False
         return "DD.MM.YYYY" not in fact or "DD.MM.YYYY" in generated
