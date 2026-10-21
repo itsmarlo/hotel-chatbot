@@ -43,6 +43,28 @@ def test_chat_answers_policy_with_source(tmp_path: Path) -> None:
     assert payload["debug"]["sources"] == ["check-in"]
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "sight seeing tips in beirut",
+        "What are some sightseeing ideas in Beirut?",
+        "What can I do in Beirut?",
+    ],
+)
+def test_chat_answers_sightseeing_with_attribution(tmp_path: Path, message: str) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "sightseeing.db"))) as client:
+        response = client.post("/chat", json={"message": message})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["debug"]["selected_route"] == "local_guide"
+    assert payload["debug"]["sources"] == ["beirut-sightseeing"]
+    assert "Sursock Museum" in payload["message"]
+    assert "Corniche" in payload["message"]
+    assert "https://sursock.museum/" in payload["message"]
+    assert "Source: Local guide" in payload["message"]
+
+
 def test_chat_booking_requires_confirmation(tmp_path: Path) -> None:
     settings = Settings(database_path=tmp_path / "api.db")
     with TestClient(create_app(settings)) as client:

@@ -1,14 +1,14 @@
 /* Bellhob uses a light Fiori-style workspace with its own hotel identity. */
 :root {
-  --bh-navy: #123b68;
-  --bh-navy-deep: #0d294b;
-  --bh-blue-soft: #eef3f8;
-  --bh-canvas: #f4f7fb;
-  --bh-white: #fff;
-  --bh-line: #d9e1e9;
-  --bh-text: #183657;
-  --bh-muted: #5c6f82;
-  --bh-gold: #b3915f;
+  --bh-navy: #194763;
+  --bh-navy-deep: #12364e;
+  --bh-blue-soft: #edf3f2;
+  --bh-canvas: #f7f6f2;
+  --bh-white: #fffdfa;
+  --bh-line: #d9e2df;
+  --bh-text: #18394e;
+  --bh-muted: #607580;
+  --bh-gold: #ba925b;
 }
 
 body, .gradio-container { background: var(--bh-canvas) !important; color-scheme: light; }
@@ -42,9 +42,11 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   justify-content: space-between;
   gap: 1rem;
   min-height: 3.75rem;
-  padding: .55rem max(1.25rem, calc((100% - 1080px) / 2));
-  background: var(--bh-navy-deep) !important;
-  box-shadow: 0 2px 7px #0d294b21;
+  padding: .55rem max(1.25rem, calc((100% - 900px) / 2));
+  border-top: 4px solid var(--bh-gold);
+  border-bottom: 1px solid var(--bh-line);
+  background: var(--bh-white) !important;
+  box-shadow: 0 2px 9px #1736550a;
 }
 #bellhob-header .gradio-html {
   min-width: 0 !important;
@@ -60,19 +62,19 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   height: 2.7rem;
   flex: none;
   border-radius: .3rem;
-  background: #ffffff1c;
-  color: var(--bh-white);
+  background: var(--bh-navy);
+  color: #ffffff !important;
   box-shadow: inset 0 -2px 0 var(--bh-gold);
   font: 700 1.5rem Georgia, serif;
 }
 .bh-identity h1 {
   margin: 0;
-  color: var(--bh-white) !important;
+  color: var(--bh-navy-deep) !important;
   font: 700 1.15rem/1.1 Arial, Helvetica, sans-serif;
 }
 .bh-identity p {
   margin: .25rem 0 0;
-  color: #d5e4f2 !important;
+  color: var(--bh-muted) !important;
   font-size: .76rem;
   letter-spacing: .055em;
   text-transform: uppercase;
@@ -80,18 +82,18 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 #new-chat {
   flex: 0 0 auto;
   min-width: 0 !important;
-  border: 1px solid #94b1ce !important;
+  border: 1px solid #9fb2bc !important;
   border-radius: .35rem !important;
   background: transparent !important;
-  color: var(--bh-white) !important;
+  color: var(--bh-navy) !important;
   font-weight: 600;
 }
-#new-chat:hover { border-color: var(--bh-white) !important; background: #ffffff1c !important; }
+#new-chat:hover { border-color: var(--bh-navy) !important; background: var(--bh-blue-soft) !important; }
 
 .bh-intro {
-  max-width: 1080px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 1.35rem 1.25rem 1.2rem;
+  padding: 1.5rem 1.25rem 1.1rem;
 }
 .bh-intro .bh-eyebrow {
   margin: 0 0 .45rem;
@@ -108,17 +110,17 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 .bh-intro > p:last-child { margin: .4rem 0 0; color: var(--bh-muted) !important; font-size: .92rem; }
 
 #chat-panel {
-  max-width: 1040px;
+  max-width: 900px;
   margin: 0 auto;
   gap: .55rem;
-  padding: .75rem;
+  padding: .8rem;
   border: 1px solid var(--bh-line) !important;
-  border-radius: .35rem;
+  border-radius: .8rem;
   background: var(--bh-white) !important;
-  box-shadow: 0 2px 10px #1736550f;
+  box-shadow: 0 8px 30px #1736550c;
 }
 #chatbot {
-  height: min(62vh, 620px) !important;
+  height: min(48vh, 430px) !important;
   border: 0 !important;
   background: var(--bh-white) !important;
   color: var(--bh-text) !important;
@@ -132,13 +134,13 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 }
 #chatbot .message.bot {
   border: 1px solid var(--bh-line) !important;
-  border-radius: .7rem .7rem .7rem .15rem !important;
+  border-radius: .85rem .85rem .85rem .2rem !important;
   background: var(--bh-blue-soft) !important;
   color: var(--bh-text) !important;
 }
 #chatbot .message.user {
   border: 1px solid var(--bh-navy) !important;
-  border-radius: .7rem .7rem .15rem .7rem !important;
+  border-radius: .85rem .85rem .2rem .85rem !important;
   background: var(--bh-navy) !important;
   color: var(--bh-white) !important;
 }
@@ -187,12 +189,12 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   .bh-thinking-dots i { animation: none; opacity: .75; }
 }
 
-#starter-row { gap: .55rem; padding: .1rem .45rem .3rem; flex-wrap: wrap; }
+#starter-row { gap: .45rem; padding: .1rem .45rem .3rem; flex-wrap: wrap; }
 #starter-row button {
-  flex: 1 1 10rem;
+  flex: 1 1 9rem;
   min-width: 0 !important;
   border: 1px solid var(--bh-line) !important;
-  border-radius: .35rem !important;
+  border-radius: 1rem !important;
   background: var(--bh-white) !important;
   color: var(--bh-navy) !important;
   font-size: .85rem;
@@ -240,7 +242,7 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   .bh-intro { padding: 1.15rem .8rem 1rem; }
   .bh-intro > p:last-child { font-size: .85rem; }
   #chat-panel { width: calc(100% - 1rem); padding: .4rem; }
-  #chatbot { height: max(300px, calc(100dvh - 310px)) !important; }
+  #chatbot { height: min(48dvh, 430px) !important; min-height: 260px; }
   #starter-row button { flex: 1 1 8rem; }
   #send-button { flex-basis: 4.75rem !important; }
 }

@@ -53,6 +53,8 @@ class Policy:
     title: str
     keywords: tuple[str, ...]
     answers: dict[str, str]
+    kind: str = "hotel_policy"
+    sources: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,10 +62,12 @@ class Retrieval:
     answer: str
     source: str
     score: float
+    kind: str = "hotel_policy"
+    sources: tuple[tuple[str, str], ...] = ()
 
 
 class PolicyRetriever:
-    """Retrieve a local policy and return its authored answer with a source ID."""
+    """Retrieve authored hotel and local-guide answers with source metadata."""
 
     def __init__(
         self,
@@ -82,6 +86,11 @@ class PolicyRetriever:
                 title=item["title"],
                 keywords=tuple(item["keywords"]),
                 answers={lang: item[lang] for lang in ("en", "de", "fr")},
+                kind=item.get("kind", "hotel_policy"),
+                sources=tuple(
+                    (source["label"], source["url"])
+                    for source in item.get("sources", [])
+                ),
             )
             for item in raw
         ]
@@ -132,7 +141,10 @@ class PolicyRetriever:
         keyword_best = max(range(len(keyword_scores)), key=keyword_scores.__getitem__)
         if keyword_scores[keyword_best]:
             policy = self.policies[keyword_best]
-            return Retrieval(policy.answers.get(language, policy.answers["en"]), policy.id, 1.0)
+            return Retrieval(
+                policy.answers.get(language, policy.answers["en"]),
+                policy.id, 1.0, policy.kind, policy.sources,
+            )
         if self._index is not None:
             np = importlib.import_module("numpy")
 
@@ -158,4 +170,7 @@ class PolicyRetriever:
             if score < 2:
                 return None
             policy = self.policies[best]
-        return Retrieval(policy.answers.get(language, policy.answers["en"]), policy.id, score)
+        return Retrieval(
+            policy.answers.get(language, policy.answers["en"]),
+            policy.id, score, policy.kind, policy.sources,
+        )

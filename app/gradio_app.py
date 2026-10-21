@@ -10,30 +10,32 @@ from hotel_assistant.services.chat import ChatResult, ChatService
 
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
 UI_THEME = gr.themes.Base().set(
-    background_fill_primary="#ffffff",
-    background_fill_primary_dark="#ffffff",
-    background_fill_secondary="#f4f7fb",
-    background_fill_secondary_dark="#f4f7fb",
-    body_background_fill="#f4f6f8",
-    body_background_fill_dark="#f4f6f8",
-    body_text_color="#183657",
-    body_text_color_dark="#183657",
-    block_background_fill="#ffffff",
-    block_background_fill_dark="#ffffff",
-    panel_background_fill="#ffffff",
-    panel_background_fill_dark="#ffffff",
+    background_fill_primary="#fffdfa",
+    background_fill_primary_dark="#fffdfa",
+    background_fill_secondary="#f7f6f2",
+    background_fill_secondary_dark="#f7f6f2",
+    body_background_fill="#f7f6f2",
+    body_background_fill_dark="#f7f6f2",
+    body_text_color="#18394e",
+    body_text_color_dark="#18394e",
+    block_background_fill="#fffdfa",
+    block_background_fill_dark="#fffdfa",
+    panel_background_fill="#fffdfa",
+    panel_background_fill_dark="#fffdfa",
     input_background_fill="#ffffff",
     input_background_fill_dark="#ffffff",
-    input_placeholder_color="#697b8f",
-    input_placeholder_color_dark="#697b8f",
+    input_placeholder_color="#667985",
+    input_placeholder_color_dark="#667985",
 )
 WELCOME_MESSAGE = (
-    "Hi, I’m Bellhob. Looking for a room at Beit Zeitouna, or have a question about the hotel?"
+    "Welcome to Beit Zeitouna. I can help with a room, hotel details, or ideas for "
+    "exploring Beirut. What would you like to know?"
 )
 STARTER_QUESTIONS = (
     ("Book a room", "I would like to book a room"),
     ("Check-in times", "What time is check-in and check-out?"),
     ("Cancellation policy", "What is your cancellation policy?"),
+    ("Explore Beirut", "What are some sightseeing ideas in Beirut?"),
 )
 
 
@@ -125,9 +127,9 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
 
             gr.HTML(
                 '<div class="bh-intro">'
-                '<p class="bh-eyebrow">GUEST SERVICES</p>'
+                '<p class="bh-eyebrow">YOUR DIGITAL CONCIERGE</p>'
                 '<h2>How can we help with your stay?</h2>'
-                '<p>Ask Bellhob about rooms, reservations, or hotel information.</p>'
+                '<p>Rooms, reservations, hotel details and a few favorite places around Beirut.</p>'
                 '</div>'
             )
 
@@ -137,7 +139,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 chatbot = gr.Chatbot(
                     value=fresh_chat()[0],
                     show_label=False,
-                    height=560,
+                    height=430,
                     elem_id="chatbot",
                     layout="bubble",
                     buttons=[],
@@ -163,7 +165,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                     message = gr.Textbox(
                         label="Message Bellhob",
                         show_label=False,
-                        placeholder="Ask a question or tell me about your stay…",
+                        placeholder="Ask about your stay or explore Beirut…",
                         lines=1,
                         max_lines=5,
                         scale=8,

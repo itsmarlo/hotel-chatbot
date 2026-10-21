@@ -19,7 +19,7 @@ from hotel_assistant.dialogue.state import BookingState, TurnLimitExceeded
 from hotel_assistant.ml.inference import TrainedNLP
 from hotel_assistant.ml.qwen import BookingProposal, QwenModel
 from hotel_assistant.ml.replies import ModelRouter, ReplyRequest
-from hotel_assistant.rag.policies import PolicyRetriever
+from hotel_assistant.rag.policies import PolicyRetriever, Retrieval
 from hotel_assistant.services.booking import BookingWorkflow
 from hotel_assistant.services.interpret import (
     contextual_booking_changes,
@@ -83,7 +83,8 @@ _CONFIRM_BY_LANGUAGE = {
 }
 _GUIDANCE_BY_LANGUAGE = {
     "en": (
-        "I can help you find a room or answer a question about the hotel. "
+        "I can help you find a room, answer a hotel question, or suggest places "
+        "to explore in Beirut. "
         "If you’re planning a stay, tell me your dates (DD.MM.YYYY) and I’ll take it from there."
     ),
     "de": (
@@ -223,7 +224,7 @@ class ChatService:
             debug["detected_intent"] = intent
             if self.answer_generator is not None and route in _GENERATIVE_ROUTES:
                 # The source citation is application-owned and never entrusted to the LLM.
-                body, separator, citation = text.partition("\n\nSource: Hotel policy ")
+                body, separator, citation = text.partition("\n\nSource: ")
                 try:
                     if isinstance(self.answer_generator, ModelRouter):
                         generated = self.answer_generator.generate(
@@ -240,6 +241,17 @@ class ChatService:
                     text = generated + (separator + citation if separator else "")
                     debug["response_mode"] = "llm"
             return ChatResult(identifier, text, debug, state)
+
+        def knowledge_answer(item: Retrieval) -> ChatResult:
+            debug["sources"] = [item.source]
+            if item.kind == "local_guide":
+                links = ", ".join(f"[{label}]({url})" for label, url in item.sources)
+                citation = f"Local guide [{item.source}] · {links}"
+                route, intent = "local_guide", "SIGHTSEEING"
+            else:
+                citation = f"Hotel policy [{item.source}]"
+                route, intent = "policy", "HOTEL_POLICY"
+            return answer(f"{item.answer}\n\nSource: {citation}", route, intent)
 
         try:
             state.record_user_turn()
@@ -307,12 +319,7 @@ class ChatService:
         ):
             policy = self.retriever.retrieve(message, language)
             if policy:
-                debug["sources"] = [policy.source]
-                return answer(
-                    f"{policy.answer}\n\nSource: Hotel policy [{policy.source}]",
-                    "policy",
-                    "HOTEL_POLICY",
-                )
+                return knowledge_answer(policy)
             return answer(
                 _UNKNOWN_POLICY_BY_LANGUAGE[language],
                 "unsupported_policy",
@@ -416,12 +423,7 @@ class ChatService:
 
         policy = self.retriever.retrieve(message, language)
         if policy and question and not changes:
-            debug["sources"] = [policy.source]
-            return answer(
-                f"{policy.answer}\n\nSource: Hotel policy [{policy.source}]",
-                "policy",
-                "HOTEL_POLICY",
-            )
+            return knowledge_answer(policy)
 
         if is_booking_request(message, state, changes) or (
             qwen_proposal is not None and qwen_proposal.intent == "BOOKING"
@@ -496,12 +498,7 @@ class ChatService:
             )
 
         if policy:
-            debug["sources"] = [policy.source]
-            return answer(
-                f"{policy.answer}\n\nSource: Hotel policy [{policy.source}]",
-                "policy",
-                "HOTEL_POLICY",
-            )
+            return knowledge_answer(policy)
         if question:
             return answer(
                 _UNKNOWN_POLICY_BY_LANGUAGE[language],
