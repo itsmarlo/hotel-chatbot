@@ -185,5 +185,5 @@ def test_llm_cannot_request_extra_booking_fields(tmp_path: Path) -> None:
     result = service.respond("Ich möchte ein Zimmer buchen")
 
     assert result.debug["response_mode"] == "template"
-    assert "Ihren Namen" in result.message
+    assert "welchen Namen" in result.message
     assert "Datum" not in result.message

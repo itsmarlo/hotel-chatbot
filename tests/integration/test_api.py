@@ -60,6 +60,8 @@ def test_chat_booking_requires_confirmation(tmp_path: Path) -> None:
         assert payload["debug"]["selected_route"] == "quote"
         assert "confirm booking" in payload["message"]
         assert "US$358.00" in payload["message"]
+        assert "Demo total" not in payload["message"]
+        assert "2 nights" in payload["message"]
         repository = HotelRepository(settings.database_path)
         assert repository.count_rows("reservations") == 3
         response = client.post(
@@ -100,6 +102,7 @@ def test_french_booking_keeps_language_across_date_turns(tmp_path: Path) -> None
         assert payload["debug"]["selected_route"] == "quote"
         assert "confirmer la réservation" in payload["message"]
         assert "US$358.00" in payload["message"]
+        assert "Total de démonstration" not in payload["message"]
         confirmed = client.post(
             "/chat", json={"message": "confirmer la réservation", "session_id": session_id}
         ).json()
@@ -127,6 +130,7 @@ def test_german_booking_accepts_and_displays_german_dates(tmp_path: Path) -> Non
         assert "12.06.2027" in payload["message"]
         assert "14.06.2027" in payload["message"]
         assert "US$358.00" in payload["message"]
+        assert "Demo-Gesamtpreis" not in payload["message"]
         repository = HotelRepository(settings.database_path)
         assert repository.count_rows("reservations") == 3
         confirmed = client.post(
@@ -168,7 +172,7 @@ def test_booking_accepts_bare_name_and_contextual_checkout_date(tmp_path: Path) 
             "/chat",
             json={"message": "14.12.2027", "session_id": first["session_id"]},
         ).json()
-        assert "number of guests" in checkout["message"].casefold()
+        assert "how many guests" in checkout["message"].casefold()
 
         guests = client.post(
             "/chat",
@@ -220,6 +224,31 @@ def test_declining_quote_discards_booking_without_reservation(tmp_path: Path) ->
         ).json()
     assert declined["debug"]["selected_route"] == "booking_discarded"
     assert HotelRepository(settings.database_path).count_rows("reservations") == 3
+
+
+def test_short_confirmation_after_quote_creates_one_night_booking(tmp_path: Path) -> None:
+    settings = Settings(database_path=tmp_path / "natural_confirm.db")
+    with TestClient(create_app(settings)) as client:
+        quote = client.post(
+            "/chat",
+            json={
+                "message": (
+                    "Book a double room 2027-12-12 to 2027-12-13 for 2 guests. "
+                    "My name is Alex Kim."
+                )
+            },
+        ).json()
+        assert quote["debug"]["selected_route"] == "quote"
+        assert "1 night" in quote["message"]
+        assert "night(s)" not in quote["message"]
+        assert HotelRepository(settings.database_path).count_rows("reservations") == 3
+
+        confirmed = client.post(
+            "/chat", json={"message": "confirm", "session_id": quote["session_id"]}
+        ).json()
+
+    assert confirmed["debug"]["selected_route"] == "booking_created"
+    assert HotelRepository(settings.database_path).count_rows("reservations") == 4
 
 
 def test_chat_validates_empty_messages(tmp_path: Path) -> None:

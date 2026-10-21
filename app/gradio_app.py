@@ -22,8 +22,7 @@ UI_THEME = gr.themes.Base().set(
     input_placeholder_color_dark="#a6b8b2",
 )
 WELCOME_MESSAGE = (
-    "Welcome to Beit Zeitouna. I can help you plan a stay or answer a question "
-    "about the hotel. What can I help with?"
+    "Hi, I’m Bellhob. Looking for a room at Beit Zeitouna, or have a question about the hotel?"
 )
 STARTER_QUESTIONS = (
     ("Book a room", "I would like to book a room"),

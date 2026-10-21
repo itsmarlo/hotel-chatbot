@@ -28,7 +28,15 @@ from hotel_assistant.services.interpret import (
 )
 
 _ROOT = Path(__file__).resolve().parents[3]
-_CONFIRM = {"confirm booking", "buchung bestätigen", "confirmer la réservation"}
+_CONFIRM = {
+    "confirm",
+    "confirm booking",
+    "yes, confirm",
+    "buchung bestätigen",
+    "ja, bestätigen",
+    "confirmer",
+    "confirmer la réservation",
+}
 _DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen", "ne pas réserver"}
 _GENERATIVE_ROUTES = {"policy", "greeting"}
 _UNSAFE_REPLY = re.compile(
@@ -40,22 +48,32 @@ _UNSAFE_REPLY = re.compile(
 _FACT_NUMBERS = re.compile(r"\d+(?::\d+)?(?:\.\d+)*")
 _PROMPTS = {
     "en": {
-        "guest_name": "your name (for example, 'my name is Alex Kim')",
-        "check_in": "a check-in date in DD.MM.YYYY format (for example, 12.06.2027)",
-        "check_out": "a check-out date in DD.MM.YYYY format (for example, 14.06.2027)",
-        "guests": "the number of guests (for example, '2 guests')",
+        "guest_name": "What’s your name for the booking?",
+        "check_in": "What’s your check-in date? Please use DD.MM.YYYY, for example 12.06.2027.",
+        "check_out": "What’s your check-out date? Please use DD.MM.YYYY, for example 14.06.2027.",
+        "guests": "How many guests will be staying?",
     },
     "de": {
-        "guest_name": "Ihren Namen (zum Beispiel 'Ich heiße Alex Kim')",
-        "check_in": "ein Anreisedatum im Format DD.MM.YYYY (z. B. 12.06.2027)",
-        "check_out": "ein Abreisedatum im Format DD.MM.YYYY (z. B. 14.06.2027)",
-        "guests": "die Gästezahl (zum Beispiel '2 Gäste')",
+        "guest_name": "Auf welchen Namen darf ich die Buchung anlegen?",
+        "check_in": (
+            "Wann möchten Sie anreisen? Bitte im Format DD.MM.YYYY, zum Beispiel 12.06.2027."
+        ),
+        "check_out": (
+            "Wann möchten Sie abreisen? Bitte im Format DD.MM.YYYY, zum Beispiel 14.06.2027."
+        ),
+        "guests": "Wie viele Gäste werden übernachten?",
     },
     "fr": {
-        "guest_name": "votre nom (par exemple « je m'appelle Alex Kim »)",
-        "check_in": "une date d'arrivée au format DD.MM.YYYY (par exemple 12.06.2027)",
-        "check_out": "une date de départ au format DD.MM.YYYY (par exemple 14.06.2027)",
-        "guests": "le nombre de personnes (par exemple « 2 personnes »)",
+        "guest_name": "À quel nom dois-je faire la réservation ?",
+        "check_in": (
+            "Quelle est votre date d’arrivée ? Utilisez le format DD.MM.YYYY, "
+            "par exemple 12.06.2027."
+        ),
+        "check_out": (
+            "Quelle est votre date de départ ? Utilisez le format DD.MM.YYYY, "
+            "par exemple 14.06.2027."
+        ),
+        "guests": "Combien de personnes séjourneront ?",
     },
 }
 _CONFIRM_BY_LANGUAGE = {
@@ -65,19 +83,25 @@ _CONFIRM_BY_LANGUAGE = {
 }
 _GUIDANCE_BY_LANGUAGE = {
     "en": (
-        "I can help with a room request or hotel policies. For a booking, give dates as "
-        "DD.MM.YYYY, a guest count, and your name. I will ask before creating it."
+        "I can help you find a room or answer a question about the hotel. "
+        "If you’re planning a stay, tell me your dates (DD.MM.YYYY) and I’ll take it from there."
     ),
     "de": (
-        "Ich helfe Ihnen bei Zimmeranfragen und Fragen zum Hotel. Für eine Buchung "
-        "nennen Sie bitte An- und Abreisedatum im Format DD.MM.YYYY, die Anzahl der Gäste "
-        "und Ihren Namen. Vor der Buchung bitte ich um Ihre Bestätigung."
+        "Ich helfe Ihnen gern bei der Zimmersuche oder einer Frage zum Hotel. "
+        "Nennen Sie mir für einen Aufenthalt Ihre Reisedaten im Format DD.MM.YYYY."
     ),
     "fr": (
-        "Je peux vous aider à réserver une chambre ou répondre aux questions sur l’hôtel. "
-        "Pour réserver, indiquez les dates au format DD.MM.YYYY, le nombre de personnes et "
-        "votre nom. Je demanderai votre confirmation avant de créer la réservation."
+        "Je peux vous aider à trouver une chambre ou répondre à une question sur l’hôtel. "
+        "Pour un séjour, donnez-moi vos dates au format DD.MM.YYYY et je vous guiderai."
     ),
+}
+_UNKNOWN_POLICY_BY_LANGUAGE = {
+    "en": "I’m not sure from the hotel information I have. Please check with reception.",
+    "de": (
+        "Dazu habe ich keine verlässlichen Hotelinformationen. "
+        "Fragen Sie bitte an der Rezeption nach."
+    ),
+    "fr": "Je n’ai pas d’information fiable à ce sujet. Veuillez vérifier auprès de la réception.",
 }
 
 
@@ -241,20 +265,20 @@ class ChatService:
                 "The unconfirmed booking request was discarded.", "booking_discarded", "BOOKING"
             )
 
-        if message.casefold() in _CONFIRM:
+        if message.casefold().rstrip(".!? ") in _CONFIRM:
             try:
-                session.workflow.confirm(message)
+                session.workflow.confirm(_CONFIRM_BY_LANGUAGE[language])
                 reservation = session.workflow.create_booking()
             except ValueError as exc:
                 return answer(str(exc), "clarification", "BOOKING")
             session.booked = True
             confirmation_text = {
-                "en": "Booking confirmed. Reference",
-                "de": "Buchung bestätigt. Referenz",
-                "fr": "Réservation confirmée. Référence",
+                "en": "Booking confirmed! Your reference is",
+                "de": "Buchung bestätigt! Ihre Referenz ist",
+                "fr": "Réservation confirmée ! Votre référence est",
             }[language]
             return answer(
-                f"{confirmation_text}: {reservation.reference}.", "booking_created", "BOOKING"
+                f"{confirmation_text} {reservation.reference}.", "booking_created", "BOOKING"
             )
 
         # Policy questions with no explicit booking details can be answered from the
@@ -290,7 +314,7 @@ class ChatService:
                     "HOTEL_POLICY",
                 )
             return answer(
-                "I don't have a verified hotel policy for that question.",
+                _UNKNOWN_POLICY_BY_LANGUAGE[language],
                 "unsupported_policy",
                 "HOTEL_POLICY",
             )
@@ -339,14 +363,13 @@ class ChatService:
                 word in message.casefold() for word in action_words
             ):
                 return answer(
-                    "Existing reservations cannot be changed in this demo. "
-                    "Please contact the hotel.",
+                    "I can’t change an existing reservation here. Please contact reception.",
                     "unsupported_reservation_change",
                     str(debug["detected_intent"]),
                 )
             if debug["detected_intent"] == "GREETING":
                 return answer(
-                    "Hello! I can help with room requests and hotel policies.",
+                    "Hi! Looking for a room, or have a question about the hotel?",
                     "greeting",
                     "GREETING",
                 )
@@ -419,13 +442,7 @@ class ChatService:
                     )
             missing = state.missing_required_fields()
             if missing:
-                prompt = _PROMPTS[language][missing[0]]
-                lead = {
-                    "en": "To continue, please provide",
-                    "de": "Bitte geben Sie an:",
-                    "fr": "Pour continuer, indiquez",
-                }[language]
-                return answer(f"{lead} {prompt}.", "clarification", "BOOKING")
+                return answer(_PROMPTS[language][missing[0]], "clarification", "BOOKING")
             try:
                 rooms = session.workflow.search_rooms()
                 if not rooms:
@@ -446,31 +463,31 @@ class ChatService:
             total_usd = f"US${dollars:,}.{cents:02d}"
             if language == "de":
                 assert state.check_in is not None and state.check_out is not None
+                nights = f"{quote.nights} {'Nacht' if quote.nights == 1 else 'Nächte'}"
                 quote_text = (
                     f"Zimmer {room.room_number} ({room.room_type}) ist vom "
                     f"{state.check_in:%d.%m.%Y} bis {state.check_out:%d.%m.%Y} "
-                    f"für {quote.nights} "
-                    f"Nacht/Nächte verfügbar. Demo-Gesamtpreis: {total_usd}. "
-                    f"Es wird keine Zahlung eingezogen. Antworten Sie zur Bestätigung genau: "
-                    f"{confirmation}"
+                    f"für {nights} verfügbar. Gesamtpreis: {total_usd}. "
+                    "Es wird keine Zahlung eingezogen. "
+                    f"Wenn das für Sie passt, antworten Sie mit „{confirmation}“."
                 )
             elif language == "fr":
                 assert state.check_in is not None and state.check_out is not None
+                nights = f"{quote.nights} {'nuit' if quote.nights == 1 else 'nuits'}"
                 quote_text = (
                     f"La chambre {room.room_number} ({room.room_type}) est disponible du "
-                    f"{state.check_in:%d.%m.%Y} au {state.check_out:%d.%m.%Y} pour "
-                    f"{quote.nights} nuit(s). "
-                    f"Total de démonstration : {total_usd}. "
-                    f"Aucun paiement n'est prélevé. Pour confirmer, répondez exactement : "
-                    f"{confirmation}"
+                    f"{state.check_in:%d.%m.%Y} au {state.check_out:%d.%m.%Y} pour {nights}. "
+                    f"Prix total : {total_usd}. Aucun paiement n'est prélevé. "
+                    f"Si cela vous convient, répondez « {confirmation} »."
                 )
             else:
                 assert state.check_in is not None and state.check_out is not None
+                nights = f"{quote.nights} {'night' if quote.nights == 1 else 'nights'}"
                 quote_text = (
                     f"Room {room.room_number} ({room.room_type}) is available from "
-                    f"{state.check_in:%d.%m.%Y} to {state.check_out:%d.%m.%Y} for "
-                    f"{quote.nights} night(s). Demo total: {total_usd}. "
-                    f"No payment is taken. To confirm these details, reply exactly: {confirmation}"
+                    f"{state.check_in:%d.%m.%Y} to {state.check_out:%d.%m.%Y} for {nights}. "
+                    f"Total: {total_usd}. No payment is taken. "
+                    f"If that works for you, reply “{confirmation}”."
                 )
             return answer(
                 quote_text,
@@ -487,7 +504,7 @@ class ChatService:
             )
         if question:
             return answer(
-                "I don't have a verified hotel policy for that question.",
+                _UNKNOWN_POLICY_BY_LANGUAGE[language],
                 "unsupported_policy",
                 "HOTEL_POLICY",
             )
