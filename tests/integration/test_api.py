@@ -144,6 +144,39 @@ def test_german_booking_explains_invalid_date_in_german(tmp_path: Path) -> None:
         assert invalid["debug"]["selected_route"] == "clarification"
 
 
+def test_booking_accepts_bare_name_and_contextual_checkout_date(tmp_path: Path) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "contextual_slots.db"))) as client:
+        first = client.post("/chat", json={"message": "I want to book a room"}).json()
+        assert "name" in first["message"].casefold()
+
+        named = client.post(
+            "/chat",
+            json={"message": "Carlo Escobar", "session_id": first["session_id"]},
+        ).json()
+        assert "check-in" in named["message"].casefold()
+
+        checkin = client.post(
+            "/chat",
+            json={"message": "12.12.2027", "session_id": first["session_id"]},
+        ).json()
+        assert "check-out" in checkin["message"].casefold()
+
+        checkout = client.post(
+            "/chat",
+            json={"message": "14.12.2027", "session_id": first["session_id"]},
+        ).json()
+        assert "number of guests" in checkout["message"].casefold()
+
+        guests = client.post(
+            "/chat",
+            json={"message": "2", "session_id": first["session_id"]},
+        ).json()
+
+    assert guests["debug"]["selected_route"] == "quote"
+    assert "12.12.2027" in guests["message"]
+    assert "14.12.2027" in guests["message"]
+
+
 def test_german_fallback_uses_german_date_format(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -20,6 +20,7 @@ Gradio UI
   -> Conversation Controller                         (implemented)
      -> Trained multilingual intent and BIO models   (semantic mode)
      -> Qwen constrained-JSON proposals              (optional academic mode)
+     -> Hosted reply router                          (optional policy phrasing)
      -> Conservative date and slot parser            (booking authority)
      -> Deterministic BookingState                    (implemented)
         -> Guarded booking workflow + SQLite         (implemented)
@@ -46,6 +47,7 @@ Implemented:
 - synthetic BIO-format NER starter covering all six entity types
 - fixed-split multilingual intent examples, reproducible training, and versioned model artifacts
 - Chat-only Gradio interface with starter prompts, a new-chat control, and guarded quote confirmation
+- ordered Hugging Face, OpenRouter, and OpenAI reply fallback for grounded policy answers
 - root `app.py` and `requirements.txt` for Hugging Face Spaces
 - unit, ML-data-contract, and integration tests
 
@@ -166,6 +168,26 @@ Open <http://127.0.0.1:7860>. To select another port:
 HOTEL_UI_PORT=7861 python app.py
 ```
 
+The app works without an API key and then displays its verified policy text directly. To use
+hosted reply generation, set at least one provider credential in your shell. The router tries
+providers and models in `HOTEL_LLM_ORDER`; a timeout, provider error, malformed response, or
+empty response advances to the next model.
+
+```bash
+export HF_TOKEN='your dedicated inference token'
+export HOTEL_LLM_ORDER='huggingface,openrouter,openai'
+export HOTEL_HF_MODELS='Qwen/Qwen3.5-9B:fastest,openai/gpt-oss-20b:fastest'
+python app.py
+```
+
+`OPENROUTER_API_KEY` and `OPENAI_API_KEY` enable the other providers. Their model lists can be
+changed with `HOTEL_OPENROUTER_MODELS` and `HOTEL_OPENAI_MODELS`. Credentials belong in local
+environment variables or deployment secrets and must never be committed.
+
+Language models only rephrase retrieved policy answers and greetings. The application parser
+and state machine collect names, dates, guests, room types, quotes, and confirmation phrases.
+This keeps model wording from changing booking state or claiming that an action occurred.
+
 Try `When is check-in?` or `I want to book a double room`. The chatbot requests and
 displays dates as `DD.MM.YYYY` (for example, `12.06.2027`); ISO dates are also accepted.
 The assistant asks for missing information, quotes an available synthetic room, and only creates
@@ -215,15 +237,16 @@ after installing `.[presentation]`.
 ## 12. Hugging Face Spaces deployment
 
 The public [Bellhob Space](https://huggingface.co/spaces/itsmarlo/bellhob-hotel-chatbot) uses
-the trained intent model, semantic policy retrieval, and Qwen-generated conversational
-replies grounded in verified text. Booking quotes and confirmations remain controlled by the
-workflow. It is packaged separately so the public Space includes runtime code and synthetic
-assets without local databases, bundled Qwen weights, or academic evaluation reports.
+the trained intent model and semantic policy retrieval. When a provider secret is configured,
+the hosted router can phrase grounded policy answers; otherwise, verified templates are shown.
+Booking dialogue, quotes, and confirmations remain controlled by the workflow. The Space is
+packaged separately so it includes runtime code and synthetic assets without local databases,
+model weights, credentials, or academic evaluation reports.
 See [deployment instructions](docs/deployment.md).
 for the exact rebuild command and ZeroGPU limitations.
 
-The Space does not run Qwen; use section 9 for the full local Qwen academic mode. Its SQLite
-database is ephemeral, so demo bookings can disappear when the Space restarts.
+The Space does not run the local Qwen model; use section 9 for the constrained local academic
+mode. Its SQLite database is ephemeral, so demo bookings can disappear when the Space restarts.
 
 ## 13. Repository layout
 

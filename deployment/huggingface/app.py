@@ -1,4 +1,4 @@
-"""Space entry point with grounded Qwen replies and guarded booking state."""
+"""Space entry point with routed LLM replies and guarded booking state."""
 
 import logging
 import os
@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 torch.set_num_threads(2)
 
 from app.gradio_app import UI_CSS, UI_THEME, create_demo  # noqa: E402
-from hotel_assistant.ml.qwen import QwenModel  # noqa: E402
+from hotel_assistant.ml.replies import model_router_from_env  # noqa: E402
 from hotel_assistant.rag.policies import PolicyRetriever  # noqa: E402
 from hotel_assistant.services.chat import ChatService  # noqa: E402
 
@@ -47,14 +47,9 @@ def encode_question(question: str) -> list[list[float]]:
 
 
 retriever.query_encoder = encode_question
-qwen = QwenModel()
-
-
-def generate_reply(message: str, fact: str, language: str, route: str) -> str:
-    return qwen.generate_reply(message, fact, language, route)
-
-
-demo = create_demo(chat_service=ChatService(retriever=retriever, answer_generator=generate_reply))
+demo = create_demo(
+    chat_service=ChatService(retriever=retriever, answer_generator=model_router_from_env())
+)
 
 if __name__ == "__main__":
     demo.launch(

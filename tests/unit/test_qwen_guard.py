@@ -149,14 +149,21 @@ def test_llm_cannot_change_quote_or_claim_confirmation(tmp_path: Path) -> None:
 
 
 def test_llm_bad_reply_falls_back_to_safe_clarification(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def generate(*_args: str) -> str:
+        calls.append("called")
+        return "Your reservation is confirmed."
+
     service = ChatService(
         repository=HotelRepository(tmp_path / "llm_clarification.db"),
-        answer_generator=lambda *_: "Your reservation is confirmed.",
+        answer_generator=generate,
     )
     result = service.respond("I want to book a room")
 
     assert result.debug["response_mode"] == "template"
     assert "your name" in result.message
+    assert calls == []
 
 
 def test_llm_cannot_merge_checkin_and_checkout_facts(tmp_path: Path) -> None:

@@ -20,12 +20,16 @@ from hotel_assistant.ml.inference import TrainedNLP
 from hotel_assistant.ml.qwen import BookingProposal, QwenModel
 from hotel_assistant.rag.policies import PolicyRetriever
 from hotel_assistant.services.booking import BookingWorkflow
-from hotel_assistant.services.interpret import booking_changes, is_booking_request, language_of
+from hotel_assistant.services.interpret import (
+    contextual_booking_changes,
+    is_booking_request,
+    language_of,
+)
 
 _ROOT = Path(__file__).resolve().parents[3]
 _CONFIRM = {"confirm booking", "buchung bestätigen", "confirmer la réservation"}
 _DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen", "ne pas réserver"}
-_GENERATIVE_ROUTES = {"policy", "greeting", "guidance", "clarification"}
+_GENERATIVE_ROUTES = {"policy", "greeting"}
 _UNSAFE_REPLY = re.compile(
     r"\b(?:booked|reserviert|réservée?|confirmed)\b|"
     r"\b(?:booking|reservation|buchung|réservation)\s+(?:is\s+)?"
@@ -33,13 +37,6 @@ _UNSAFE_REPLY = re.compile(
     re.IGNORECASE,
 )
 _FACT_NUMBERS = re.compile(r"\d+(?::\d+)?(?:\.\d+)*")
-_BOOKING_SLOT_TERMS = {
-    "guest_name": re.compile(r"\b(?:name[n]?|nom)\b", re.IGNORECASE),
-    "check_in": re.compile(r"check[- ]?in|anreise|arriv", re.IGNORECASE),
-    "check_out": re.compile(r"check[- ]?out|abreise|départ", re.IGNORECASE),
-    "date": re.compile(r"DD\.MM\.YYYY|datum|date", re.IGNORECASE),
-    "guests": re.compile(r"guest|gäste|people|personne", re.IGNORECASE),
-}
 _PROMPTS = {
     "en": {
         "guest_name": "your name (for example, 'my name is Alex Kim')",
@@ -97,6 +94,7 @@ class _Session:
     workflow: BookingWorkflow
     touched: float
     booked: bool = False
+    booking_active: bool = False
     language: str = "en"
 
 
@@ -198,14 +196,7 @@ class ChatService:
         def answer(text: str, route: str, intent: str) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
-            friendly_clarification = route != "clarification" or text.startswith(
-                ("To continue", "Bitte geben Sie an:", "Pour continuer")
-            )
-            if (
-                self.answer_generator is not None
-                and route in _GENERATIVE_ROUTES
-                and friendly_clarification
-            ):
+            if self.answer_generator is not None and route in _GENERATIVE_ROUTES:
                 # The source citation is application-owned and never entrusted to the LLM.
                 body, separator, citation = text.partition("\n\nSource: Hotel policy ")
                 try:
@@ -238,6 +229,7 @@ class ChatService:
         if message.casefold() in _DECLINE:
             state.reset()
             session.workflow = BookingWorkflow(state, self.repository)
+            session.booking_active = False
             return answer(
                 "The unconfirmed booking request was discarded.", "booking_discarded", "BOOKING"
             )
@@ -265,7 +257,9 @@ class ChatService:
             for word in ("what", "when", "how", "wann", "wie", "quel", "quand", "comment")
         )
         try:
-            initial_changes = booking_changes(message)
+            initial_changes = contextual_booking_changes(
+                message, state, active_booking=session.booking_active
+            )
         except ValueError as exc:
             if language == "de":
                 return answer(
@@ -402,6 +396,7 @@ class ChatService:
         if is_booking_request(message, state, changes) or (
             qwen_proposal is not None and qwen_proposal.intent == "BOOKING"
         ):
+            session.booking_active = True
             if changes:
                 try:
                     state.update(**changes)
@@ -509,13 +504,4 @@ class ChatService:
                     anchor, generated, re.IGNORECASE
                 ):
                     return False
-        if route == "clarification":
-            requested = {
-                name for name, pattern in _BOOKING_SLOT_TERMS.items() if pattern.search(fact)
-            }
-            mentioned = {
-                name for name, pattern in _BOOKING_SLOT_TERMS.items() if pattern.search(generated)
-            }
-            if not requested.issubset(mentioned) or not mentioned.issubset(requested):
-                return False
         return "DD.MM.YYYY" not in fact or "DD.MM.YYYY" in generated

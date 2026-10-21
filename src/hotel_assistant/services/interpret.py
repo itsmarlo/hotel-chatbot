@@ -12,6 +12,7 @@ _NAME = re.compile(
     r"([\wÀ-ÿ]+(?:[ '-][\wÀ-ÿ]+){0,3})",
     re.I,
 )
+_BARE_NAME = re.compile(r"[A-Za-zÀ-ÿ]{2,}(?:[ '-][A-Za-zÀ-ÿ]{2,}){1,3}")
 _ROOMS = {
     "single": ("single", "einzelzimmer", "individuelle"),
     "double": ("double", "doppelzimmer", "chambre double"),
@@ -90,6 +91,30 @@ def booking_changes(message: str) -> dict[str, object]:
         if any(re.search(rf"\b{re.escape(alias)}\b", lower) for alias in aliases):
             changes["room_type"] = room_type.capitalize()
             break
+    return changes
+
+
+def contextual_booking_changes(
+    message: str, state: BookingState, *, active_booking: bool = False
+) -> dict[str, object]:
+    """Interpret terse answers against the one booking field currently requested."""
+    changes = booking_changes(message)
+    if not active_booking and not any(
+        value is not None for value in state.to_raw_dict().values()
+    ):
+        return changes
+    missing = state.missing_required_fields()
+    if not missing:
+        return changes
+    expected = missing[0]
+    stripped = message.strip()
+    if expected == "guest_name" and "guest_name" not in changes:
+        if _BARE_NAME.fullmatch(stripped):
+            changes["guest_name"] = stripped
+    elif expected == "check_out" and "check_in" in changes and "check_out" not in changes:
+        changes["check_out"] = changes.pop("check_in")
+    elif expected == "guests" and "guests" not in changes and stripped.isdecimal():
+        changes["guests"] = int(stripped)
     return changes
 
 
