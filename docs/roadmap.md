@@ -12,8 +12,9 @@ interface, then a single-prompt baseline and comparison.
 - Done: tests for invalid data, stale quotes, changed prices, occupied rooms and confirmation.
 - Done: expose the workflow through the conversation controller, passing the raw user
   confirmation message to the guard.
-- Next: define a currency, cancellation policy, and any price/tax rules before showing a
-  customer-facing total. The current integer amounts are synthetic demo cents.
+- Demo quotes are displayed in US dollars. Stored integer amounts are synthetic USD cents.
+- Next: define a cancellation policy and any price/tax rules before showing a
+  customer-facing payable total.
 
 ## Phase 3: hotel-policy retrieval (foundation implemented)
 

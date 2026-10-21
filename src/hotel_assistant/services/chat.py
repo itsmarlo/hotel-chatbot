@@ -442,13 +442,15 @@ class ChatService:
                     f"Please correct the booking details: {exc}", "clarification", "BOOKING"
                 )
             confirmation = _CONFIRM_BY_LANGUAGE[language]
+            dollars, cents = divmod(quote.total_cents, 100)
+            total_usd = f"US${dollars:,}.{cents:02d}"
             if language == "de":
                 assert state.check_in is not None and state.check_out is not None
                 quote_text = (
                     f"Zimmer {room.room_number} ({room.room_type}) ist vom "
                     f"{state.check_in:%d.%m.%Y} bis {state.check_out:%d.%m.%Y} "
                     f"für {quote.nights} "
-                    f"Nacht/Nächte verfügbar. Demo-Gesamtpreis: {quote.total_cents} Cent. "
+                    f"Nacht/Nächte verfügbar. Demo-Gesamtpreis: {total_usd}. "
                     f"Es wird keine Zahlung eingezogen. Antworten Sie zur Bestätigung genau: "
                     f"{confirmation}"
                 )
@@ -458,7 +460,7 @@ class ChatService:
                     f"La chambre {room.room_number} ({room.room_type}) est disponible du "
                     f"{state.check_in:%d.%m.%Y} au {state.check_out:%d.%m.%Y} pour "
                     f"{quote.nights} nuit(s). "
-                    f"Total de démonstration : {quote.total_cents} centimes. "
+                    f"Total de démonstration : {total_usd}. "
                     f"Aucun paiement n'est prélevé. Pour confirmer, répondez exactement : "
                     f"{confirmation}"
                 )
@@ -467,7 +469,7 @@ class ChatService:
                 quote_text = (
                     f"Room {room.room_number} ({room.room_type}) is available from "
                     f"{state.check_in:%d.%m.%Y} to {state.check_out:%d.%m.%Y} for "
-                    f"{quote.nights} night(s). Demo total: {quote.total_cents} cents. "
+                    f"{quote.nights} night(s). Demo total: {total_usd}. "
                     f"No payment is taken. To confirm these details, reply exactly: {confirmation}"
                 )
             return answer(

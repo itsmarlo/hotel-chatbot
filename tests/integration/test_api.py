@@ -59,6 +59,7 @@ def test_chat_booking_requires_confirmation(tmp_path: Path) -> None:
             session_id = payload["session_id"]
         assert payload["debug"]["selected_route"] == "quote"
         assert "confirm booking" in payload["message"]
+        assert "US$358.00" in payload["message"]
         repository = HotelRepository(settings.database_path)
         assert repository.count_rows("reservations") == 3
         response = client.post(
@@ -98,6 +99,7 @@ def test_french_booking_keeps_language_across_date_turns(tmp_path: Path) -> None
             session_id = payload["session_id"]
         assert payload["debug"]["selected_route"] == "quote"
         assert "confirmer la réservation" in payload["message"]
+        assert "US$358.00" in payload["message"]
         confirmed = client.post(
             "/chat", json={"message": "confirmer la réservation", "session_id": session_id}
         ).json()
@@ -124,6 +126,7 @@ def test_german_booking_accepts_and_displays_german_dates(tmp_path: Path) -> Non
         assert payload["debug"]["selected_route"] == "quote"
         assert "12.06.2027" in payload["message"]
         assert "14.06.2027" in payload["message"]
+        assert "US$358.00" in payload["message"]
         repository = HotelRepository(settings.database_path)
         assert repository.count_rows("reservations") == 3
         confirmed = client.post(
