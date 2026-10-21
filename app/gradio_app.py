@@ -10,16 +10,16 @@ from hotel_assistant.services.chat import ChatResult, ChatService
 
 UI_CSS = (Path(__file__).parent / "ui.css").read_text(encoding="utf-8")
 UI_THEME = gr.themes.Base().set(
-    body_background_fill="#0d1416",
-    body_background_fill_dark="#0d1416",
-    body_text_color="#edf4f0",
-    body_text_color_dark="#edf4f0",
-    block_background_fill="#142023",
-    block_background_fill_dark="#142023",
-    input_background_fill="#1b2a2d",
-    input_background_fill_dark="#1b2a2d",
-    input_placeholder_color="#a6b8b2",
-    input_placeholder_color_dark="#a6b8b2",
+    body_background_fill="#f4f6f8",
+    body_background_fill_dark="#f4f6f8",
+    body_text_color="#183657",
+    body_text_color_dark="#183657",
+    block_background_fill="#ffffff",
+    block_background_fill_dark="#ffffff",
+    input_background_fill="#ffffff",
+    input_background_fill_dark="#ffffff",
+    input_placeholder_color="#697b8f",
+    input_placeholder_color_dark="#697b8f",
 )
 WELCOME_MESSAGE = (
     "Hi, I’m Bellhob. Looking for a room at Beit Zeitouna, or have a question about the hotel?"
@@ -63,12 +63,13 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         history: list[dict[str, Any]],
         session_id: str | None,
         pending_confirmation: str,
-    ) -> tuple[str, list[dict[str, Any]], str | None, str, Any, Any]:
+    ) -> tuple[str, list[dict[str, Any]], str | None, str, Any, Any, Any]:
         if not message.strip():
             return (
                 "", history, session_id, pending_confirmation,
                 gr.update(visible=bool(pending_confirmation)),
                 gr.update(visible=len(history) <= 1),
+                gr.update(visible=False),
             )
         if len(message) > 4_000:
             updated_history = [
@@ -79,6 +80,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             return (
                 "", updated_history, session_id, pending_confirmation,
                 gr.update(visible=bool(pending_confirmation)),
+                gr.update(visible=False),
                 gr.update(visible=False),
             )
         result = service.respond(message, session_id)
@@ -92,13 +94,17 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             "", updated_history, result.session_id, phrase or "",
             gr.update(visible=phrase is not None),
             gr.update(visible=False),
+            gr.update(visible=False),
         )
+
+    def show_thinking(message: str) -> Any:
+        return gr.update(visible=bool(message.strip()))
 
     def reset_session(
         session_id: str | None,
-    ) -> tuple[list[dict[str, str]], str, None, str, Any, Any]:
+    ) -> tuple[list[dict[str, str]], str, None, str, Any, Any, Any]:
         service.reset(session_id)
-        return fresh_chat()
+        return (*fresh_chat(), gr.update(visible=False))
 
     with gr.Blocks(title="Bellhob | Beit Zeitouna") as demo:
         with gr.Column(elem_id="bellhob-shell"):
@@ -110,6 +116,14 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                     '</div>'
                 )
                 reset = gr.Button("New chat", variant="secondary", size="sm", elem_id="new-chat")
+
+            gr.HTML(
+                '<div class="bh-intro">'
+                '<p class="bh-eyebrow">YOUR DIGITAL CONCIERGE</p>'
+                '<h2>A stay shaped around you.</h2>'
+                '<p>Explore rooms and hotel details with Bellhob.</p>'
+                '</div>'
+            )
 
             session = gr.State(value=None)
             pending_confirmation = gr.State(value="")
@@ -124,6 +138,16 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                     feedback_options=None,
                     allow_file_downloads=False,
                     allow_tags=False,
+                )
+                thinking = gr.HTML(
+                    '<div class="bh-thinking" role="status" aria-live="polite">'
+                    '<span class="bh-thinking-mark" aria-hidden="true">B</span>'
+                    '<span>Bellhob is thinking</span>'
+                    '<span class="bh-thinking-dots" aria-hidden="true">'
+                    '<i></i><i></i><i></i></span>'
+                    '</div>',
+                    visible=False,
+                    elem_id="thinking-status",
                 )
                 with gr.Row(elem_id="starter-row") as starters:
                     prompt_buttons = [
@@ -153,22 +177,29 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             )
 
         inputs = [message, chatbot, session, pending_confirmation]
-        outputs = [message, chatbot, session, pending_confirmation, confirm, starters]
+        outputs = [message, chatbot, session, pending_confirmation, confirm, starters, thinking]
         for button, (_, question) in zip(prompt_buttons, STARTER_QUESTIONS, strict=True):
-            button.click(lambda text=question: text, outputs=[message]).success(
-                submit_message, inputs=inputs, outputs=outputs
-            )
+            button.click(lambda text=question: text, outputs=[message], queue=False).then(
+                show_thinking, inputs=[message], outputs=[thinking], queue=False
+            ).then(submit_message, inputs=inputs, outputs=outputs, show_progress="hidden")
         confirm.click(
             lambda phrase: phrase,
             inputs=[pending_confirmation],
             outputs=[message],
-        ).success(submit_message, inputs=inputs, outputs=outputs)
-        send.click(submit_message, inputs=inputs, outputs=outputs)
-        message.submit(submit_message, inputs=inputs, outputs=outputs)
+            queue=False,
+        ).then(show_thinking, inputs=[message], outputs=[thinking], queue=False).then(
+            submit_message, inputs=inputs, outputs=outputs, show_progress="hidden"
+        )
+        send.click(
+            show_thinking, inputs=[message], outputs=[thinking], queue=False
+        ).then(submit_message, inputs=inputs, outputs=outputs, show_progress="hidden")
+        message.submit(
+            show_thinking, inputs=[message], outputs=[thinking], queue=False
+        ).then(submit_message, inputs=inputs, outputs=outputs, show_progress="hidden")
         reset.click(
             reset_session,
             inputs=[session],
-            outputs=[chatbot, message, session, pending_confirmation, confirm, starters],
+            outputs=[chatbot, message, session, pending_confirmation, confirm, starters, thinking],
         )
 
     return demo

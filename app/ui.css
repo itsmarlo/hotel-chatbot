@@ -1,54 +1,229 @@
-/* Bellhob's single chat surface uses one dark palette in every system color mode. */
+/* Bellhob uses a quiet hotel palette while keeping its own identity. */
 :root {
-  --bh-bg: #0d1416;
-  --bh-surface: #142023;
-  --bh-surface-raised: #1b2a2d;
-  --bh-line: #304246;
-  --bh-text: #edf4f0;
-  --bh-muted: #b2c3bd;
-  --bh-mint: #b9ddc6;
-  --bh-user-ink: #17302a;
+  --bh-navy: #123b68;
+  --bh-navy-deep: #0d294b;
+  --bh-blue-soft: #eef3f8;
+  --bh-canvas: #f4f6f8;
+  --bh-white: #fff;
+  --bh-line: #d9e1e9;
+  --bh-text: #183657;
+  --bh-muted: #5c6f82;
+  --bh-gold: #b3915f;
 }
-body, .gradio-container { background: var(--bh-bg) !important; }
-.gradio-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 100vh; padding: 0 !important; color: var(--bh-text) !important; }
+
+body, .gradio-container { background: var(--bh-canvas) !important; }
+.gradio-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 100vh;
+  padding: 0 !important;
+  color: var(--bh-text) !important;
+}
 .gradio-container > .main { max-width: 100% !important; padding: 0 !important; }
-#bellhob-shell { width: 100%; max-width: 800px; min-width: 0 !important; min-height: 100vh; margin: 0 auto; padding: 1.4rem 1.25rem 1rem; gap: 0; box-sizing: border-box; }
-#bellhob-header { align-items: center; justify-content: space-between; padding: 0 0 1.15rem; gap: 1rem; }
-#bellhob-header, #chat-panel, #starter-row, #composer-row { min-width: 0 !important; width: 100%; box-sizing: border-box; }
+
+#bellhob-shell {
+  width: 100%;
+  max-width: 1020px;
+  min-width: 0 !important;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 1.4rem 1.5rem 1rem;
+  gap: 0;
+  box-sizing: border-box;
+}
+#bellhob-header, #chat-panel, #starter-row, #composer-row {
+  min-width: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+#bellhob-header {
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .1rem .25rem 1.05rem;
+  border-bottom: 1px solid var(--bh-line);
+}
 #bellhob-header .gradio-html { min-width: 0 !important; flex: 1 1 auto; }
 .bh-identity { display: flex; align-items: center; gap: .85rem; }
-.bh-mark { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none; border: 1px solid #56756b; border-radius: .7rem; background: #213a35; color: var(--bh-mint); font: 700 1.4rem Georgia, serif; }
-.bh-identity h1 { margin: 0; color: var(--bh-text) !important; font: 700 1.45rem/1.1 Georgia, serif; letter-spacing: -.025em; }
-.bh-identity p { margin: .25rem 0 0; color: var(--bh-muted) !important; font-size: .8rem; }
-#new-chat { flex: 0 0 auto; min-width: 0 !important; border: 1px solid var(--bh-line) !important; background: var(--bh-surface-raised) !important; color: var(--bh-text) !important; }
-#new-chat:hover { border-color: var(--bh-mint) !important; background: #26393b !important; }
-#chat-panel { background: var(--bh-surface) !important; border: 1px solid var(--bh-line) !important; border-radius: .9rem; box-shadow: 0 20px 50px #00000026; padding: .6rem; gap: .5rem; }
-#chatbot { border: 0 !important; background: var(--bh-surface) !important; color: var(--bh-text) !important; height: min(66vh, 560px) !important; }
-#chatbot .message.bot { background: var(--bh-surface-raised) !important; border: 1px solid #34484a !important; color: var(--bh-text) !important; }
-#chatbot .message.user { background: var(--bh-mint) !important; border: 1px solid #d0e8d7 !important; color: var(--bh-user-ink) !important; }
-/* Gradio's Markdown typography has its own color rules, including in dark mode. */
+.bh-mark {
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: none;
+  border-radius: .3rem;
+  background: var(--bh-navy);
+  color: var(--bh-white);
+  box-shadow: inset 0 -3px 0 var(--bh-gold);
+  font: 700 1.5rem Georgia, serif;
+}
+.bh-identity h1 {
+  margin: 0;
+  color: var(--bh-navy-deep) !important;
+  font: 700 1.5rem/1.1 Georgia, serif;
+  letter-spacing: -.02em;
+}
+.bh-identity p {
+  margin: .25rem 0 0;
+  color: var(--bh-muted) !important;
+  font-size: .76rem;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+#new-chat {
+  flex: 0 0 auto;
+  min-width: 0 !important;
+  border: 1px solid var(--bh-line) !important;
+  border-radius: .35rem !important;
+  background: var(--bh-white) !important;
+  color: var(--bh-navy) !important;
+  font-weight: 600;
+}
+#new-chat:hover { border-color: var(--bh-navy) !important; background: var(--bh-blue-soft) !important; }
+
+.bh-intro { padding: 1.65rem .25rem 1.45rem; }
+.bh-intro .bh-eyebrow {
+  margin: 0 0 .45rem;
+  color: var(--bh-navy) !important;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .17em;
+}
+.bh-intro h2 {
+  margin: 0;
+  color: var(--bh-navy-deep) !important;
+  font: 500 clamp(1.8rem, 3vw, 2.55rem)/1.16 Georgia, serif;
+  letter-spacing: -.025em;
+}
+.bh-intro > p:last-child { margin: .55rem 0 0; color: var(--bh-muted) !important; font-size: .96rem; }
+
+#chat-panel {
+  gap: .55rem;
+  padding: .75rem;
+  border: 1px solid var(--bh-line) !important;
+  border-top: 3px solid var(--bh-navy) !important;
+  border-radius: .55rem;
+  background: var(--bh-white) !important;
+  box-shadow: 0 12px 36px #17365512;
+}
+#chatbot {
+  height: min(57vh, 560px) !important;
+  border: 0 !important;
+  background: var(--bh-white) !important;
+  color: var(--bh-text) !important;
+}
+#chatbot .message.bot {
+  border: 1px solid var(--bh-line) !important;
+  border-radius: .7rem .7rem .7rem .15rem !important;
+  background: var(--bh-blue-soft) !important;
+  color: var(--bh-text) !important;
+}
+#chatbot .message.user {
+  border: 1px solid var(--bh-navy) !important;
+  border-radius: .7rem .7rem .15rem .7rem !important;
+  background: var(--bh-navy) !important;
+  color: var(--bh-white) !important;
+}
 #chatbot .message.bot .prose, #chatbot .message.bot .prose * { color: var(--bh-text) !important; }
-#chatbot .message.user .prose, #chatbot .message.user .prose * { color: var(--bh-user-ink) !important; }
-#chatbot .message.bot .prose a { color: #b9e5ca !important; text-decoration: underline; }
-#starter-row { gap: .5rem; padding: .1rem .45rem .35rem; flex-wrap: wrap; }
-#starter-row button { flex: 1 1 9rem; min-width: 0 !important; border: 1px solid #4b6965 !important; border-radius: 99px; background: #203330 !important; color: #d5ece0 !important; font-size: .83rem; font-weight: 600; }
-#starter-row button:hover { background: #2b4840 !important; border-color: var(--bh-mint) !important; }
-#composer-row { gap: .55rem; padding: .2rem .3rem .3rem; align-items: stretch; }
-#message-box { min-width: 0 !important; flex: 1 1 0 !important; background: var(--bh-surface-raised) !important; border-color: var(--bh-line) !important; }
-#message-box textarea { background: var(--bh-surface-raised) !important; color: var(--bh-text) !important; font-size: .96rem; line-height: 1.4; }
-#message-box textarea::placeholder { color: #a6b8b2 !important; opacity: 1; }
-#send-button, #confirm-booking { background: var(--bh-mint) !important; border-color: var(--bh-mint) !important; color: var(--bh-user-ink) !important; font-weight: 700; }
-#send-button:hover, #confirm-booking:hover { background: #d2ecd9 !important; border-color: #d2ecd9 !important; }
-#send-button { flex: 0 0 5.5rem !important; min-width: 0 !important; }
-#confirm-booking { margin: 0 .3rem .3rem; }
+#chatbot .message.user .prose, #chatbot .message.user .prose * { color: var(--bh-white) !important; }
+#chatbot .message.bot .prose a { color: var(--bh-navy) !important; text-decoration: underline; }
+
+#thinking-status { margin: 0 .55rem; padding: 0 !important; background: transparent !important; }
+.bh-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .7rem;
+  border: 1px solid var(--bh-line);
+  border-radius: .5rem;
+  background: var(--bh-blue-soft);
+  color: var(--bh-navy);
+  font-size: .86rem;
+  font-weight: 600;
+}
+.bh-thinking-mark {
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: .2rem;
+  background: var(--bh-navy);
+  color: var(--bh-white);
+  font: 700 .75rem Georgia, serif;
+}
+.bh-thinking-dots { display: inline-flex; align-items: end; gap: .2rem; padding-left: .1rem; }
+.bh-thinking-dots i {
+  width: .28rem;
+  height: .28rem;
+  border-radius: 50%;
+  background: var(--bh-navy);
+  animation: bh-pulse 1.1s ease-in-out infinite;
+}
+.bh-thinking-dots i:nth-child(2) { animation-delay: .15s; }
+.bh-thinking-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes bh-pulse {
+  0%, 60%, 100% { opacity: .35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-.2rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bh-thinking-dots i { animation: none; opacity: .75; }
+}
+
+#starter-row { gap: .55rem; padding: .1rem .45rem .3rem; flex-wrap: wrap; }
+#starter-row button {
+  flex: 1 1 10rem;
+  min-width: 0 !important;
+  border: 1px solid var(--bh-line) !important;
+  border-radius: .35rem !important;
+  background: var(--bh-white) !important;
+  color: var(--bh-navy) !important;
+  font-size: .85rem;
+  font-weight: 600;
+}
+#starter-row button:hover { background: var(--bh-blue-soft) !important; border-color: var(--bh-navy) !important; }
+#composer-row { gap: .6rem; padding: .15rem .35rem .35rem; align-items: stretch; }
+#message-box {
+  min-width: 0 !important;
+  flex: 1 1 0 !important;
+  border: 1px solid var(--bh-line) !important;
+  border-radius: .4rem !important;
+  background: var(--bh-white) !important;
+}
+#message-box textarea {
+  background: var(--bh-white) !important;
+  color: var(--bh-text) !important;
+  font-size: .96rem;
+  line-height: 1.45;
+}
+#message-box textarea::placeholder { color: #697b8f !important; opacity: 1; }
+#send-button, #confirm-booking {
+  border: 1px solid var(--bh-navy) !important;
+  border-radius: .35rem !important;
+  background: var(--bh-navy) !important;
+  color: var(--bh-white) !important;
+  font-weight: 700;
+}
+#send-button:hover, #confirm-booking:hover {
+  border-color: var(--bh-navy-deep) !important;
+  background: var(--bh-navy-deep) !important;
+}
+#send-button { flex: 0 0 6rem !important; min-width: 0 !important; }
+#confirm-booking { margin: 0 .35rem .35rem; }
 #starter-row button:focus-visible, #new-chat:focus-visible, #send-button:focus-visible,
-#confirm-booking:focus-visible, #message-box textarea:focus-visible { outline: 3px solid #ebc88e; outline-offset: 2px; }
-.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted) !important; font-size: .75rem; line-height: 1.5; }
+#confirm-booking:focus-visible, #message-box textarea:focus-visible {
+  outline: 3px solid var(--bh-gold);
+  outline-offset: 2px;
+}
+.bh-footnote { margin: .85rem 0 0; text-align: center; color: var(--bh-muted) !important; font-size: .76rem; line-height: 1.5; }
+
 @media (max-width: 600px) {
-  #bellhob-shell { padding: .8rem .5rem 1rem; }
-  #bellhob-header { padding: .25rem .35rem 1rem; }
-  #chat-panel { border-radius: .65rem; padding: .35rem; }
-  #chatbot { height: max(320px, calc(100dvh - 370px)) !important; }
+  #bellhob-shell { padding: .8rem .55rem 1rem; }
+  #bellhob-header { padding: .15rem .2rem .8rem; }
+  .bh-intro { padding: 1.15rem .2rem 1rem; }
+  .bh-intro > p:last-child { font-size: .85rem; }
+  #chat-panel { padding: .4rem; }
+  #chatbot { height: max(300px, calc(100dvh - 365px)) !important; }
   #starter-row button { flex: 1 1 8rem; }
-  #send-button { flex-basis: 4.5rem !important; }
+  #send-button { flex-basis: 4.75rem !important; }
 }
