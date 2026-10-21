@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -125,14 +126,16 @@ class ModelRouter:
             raise ValueError("at least one reply backend is required")
         self.backends = tuple(backends)
 
-    def generate(self, request: ReplyRequest) -> str:
+    def generate(
+        self, request: ReplyRequest, validator: Callable[[str], bool] | None = None
+    ) -> str:
         failures: list[str] = []
         for backend in self.backends:
             try:
                 reply = backend.generate(request).strip()
-                if reply:
+                if reply and (validator is None or validator(reply)):
                     return reply
-                raise ValueError("provider returned an empty reply")
+                raise ValueError("provider returned an empty or invalid reply")
             except Exception as exc:
                 failures.append(f"{backend.name}: {type(exc).__name__}")
                 logger.warning("Reply backend %s failed: %s", backend.name, type(exc).__name__)

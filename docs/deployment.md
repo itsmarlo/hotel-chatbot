@@ -36,7 +36,8 @@ To rebuild the exact public bundle:
 ```bash
 python scripts/prepare_hf_space.py
 hf upload itsmarlo/bellhob-hotel-chatbot /tmp/hotel-chatbot-hf-space . \
-  --type space --commit-message 'Update academic demo'
+  --type space --delete data/synthetic/hotel.db \
+  --commit-message 'Update academic demo'
 hf spaces wait itsmarlo/bellhob-hotel-chatbot
 ```
 
@@ -47,3 +48,7 @@ rebuilds automatically after an upload.
 On 20 October 2026, the public URL returned HTTP 200. Live Gradio API checks returned a cited
 check-in policy, retrieved the same source for a paraphrase without an exact keyword, and
 created a synthetic reservation only after a second-turn confirmation.
+
+On 21 October 2026, Space revision `99a859bf3e340cc6960aa7a88ff40fc45d6839a6` reached
+`RUNNING`. The public repository no longer includes the seed database, and a live check-in
+question returned the verified 15:00 and 11:00 times with the `[check-in]` citation.

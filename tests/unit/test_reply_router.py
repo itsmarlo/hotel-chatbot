@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 
+from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.ml.replies import (
     ModelRouter,
     OpenAICompatibleBackend,
     ReplyRequest,
     model_router_from_env,
 )
+from hotel_assistant.services.chat import ChatService
 
 
 class StubBackend:
@@ -34,6 +37,23 @@ def test_router_switches_models_after_a_failure() -> None:
     reply = router("When is check-in?", "Check-in starts at 15:00.", "en", "policy")
 
     assert reply == "Check-in starts at 15:00."
+    assert primary.calls == 1
+    assert fallback.calls == 1
+
+
+def test_invalid_policy_reply_tries_next_model_and_keeps_citation(tmp_path: Path) -> None:
+    primary = StubBackend("primary", "Check-in starts at 16:00 and check-out is by 11:00.")
+    fallback = StubBackend("fallback", "Check-in starts at 15:00 and check-out is by 11:00.")
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "router.db"),
+        answer_generator=ModelRouter([primary, fallback]),
+    )
+
+    result = service.respond("When is check-in?")
+
+    assert result.debug["response_mode"] == "llm"
+    assert result.message.startswith("Check-in starts at 15:00")
+    assert result.message.endswith("Source: Hotel policy [check-in]")
     assert primary.calls == 1
     assert fallback.calls == 1
 

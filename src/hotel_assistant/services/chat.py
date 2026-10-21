@@ -18,6 +18,7 @@ from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.dialogue.state import BookingState, TurnLimitExceeded
 from hotel_assistant.ml.inference import TrainedNLP
 from hotel_assistant.ml.qwen import BookingProposal, QwenModel
+from hotel_assistant.ml.replies import ModelRouter, ReplyRequest
 from hotel_assistant.rag.policies import PolicyRetriever
 from hotel_assistant.services.booking import BookingWorkflow
 from hotel_assistant.services.interpret import (
@@ -106,7 +107,7 @@ class ChatService:
         repository: HotelRepository | None = None,
         retriever: PolicyRetriever | None = None,
         qwen: QwenModel | None = None,
-        answer_generator: Callable[[str, str, str, str], str] | None = None,
+        answer_generator: ModelRouter | Callable[[str, str, str, str], str] | None = None,
         *,
         max_sessions: int = 1000,
         session_ttl_seconds: int = 1800,
@@ -200,7 +201,13 @@ class ChatService:
                 # The source citation is application-owned and never entrusted to the LLM.
                 body, separator, citation = text.partition("\n\nSource: Hotel policy ")
                 try:
-                    generated = self.answer_generator(message, body, language, route).strip()
+                    if isinstance(self.answer_generator, ModelRouter):
+                        generated = self.answer_generator.generate(
+                            ReplyRequest(message, body, language, route),
+                            validator=lambda reply: self._valid_generated_reply(body, reply, route),
+                        )
+                    else:
+                        generated = self.answer_generator(message, body, language, route).strip()
                 except Exception as exc:
                     logging.exception("Grounded reply generation failed; using verified text")
                     debug["generation_error"] = type(exc).__name__
