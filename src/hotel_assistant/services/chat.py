@@ -97,12 +97,19 @@ _GUIDANCE_BY_LANGUAGE = {
     ),
 }
 _UNKNOWN_POLICY_BY_LANGUAGE = {
-    "en": "I’m not sure from the hotel information I have. Please check with reception.",
+    "en": (
+        "I don’t have reliable information on that yet. Please check with reception, "
+        "or ask me about rooms, hotel policies, or Beirut sights."
+    ),
     "de": (
         "Dazu habe ich keine verlässlichen Hotelinformationen. "
-        "Fragen Sie bitte an der Rezeption nach."
+        "Fragen Sie bitte an der Rezeption nach oder stellen Sie mir eine Frage "
+        "zu Zimmern, Hotelregeln oder Beirut."
     ),
-    "fr": "Je n’ai pas d’information fiable à ce sujet. Veuillez vérifier auprès de la réception.",
+    "fr": (
+        "Je n’ai pas d’information fiable à ce sujet. Vérifiez auprès de la réception, "
+        "ou demandez-moi des informations sur les chambres, l’hôtel ou Beyrouth."
+    ),
 }
 
 
@@ -112,6 +119,7 @@ class ChatResult:
     message: str
     debug: dict[str, Any] = field(default_factory=dict)
     booking_state: BookingState | None = None
+    card: dict[str, str] | None = None
 
 
 @dataclass(slots=True)
@@ -219,7 +227,9 @@ class ChatService:
             "proposed_tool": None,
             "response_mode": "template",
         }
-        def answer(text: str, route: str, intent: str) -> ChatResult:
+        def answer(
+            text: str, route: str, intent: str, card: dict[str, str] | None = None
+        ) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
             if self.answer_generator is not None and route in _GENERATIVE_ROUTES:
@@ -240,13 +250,15 @@ class ChatService:
                 if self._valid_generated_reply(body, generated, route):
                     text = generated + (separator + citation if separator else "")
                     debug["response_mode"] = "llm"
-            return ChatResult(identifier, text, debug, state)
+            return ChatResult(identifier, text, debug, state, card)
 
         def knowledge_answer(item: Retrieval) -> ChatResult:
             debug["sources"] = [item.source]
             if item.kind == "local_guide":
                 links = ", ".join(f"[{label}]({url})" for label, url in item.sources)
-                citation = f"Local guide [{item.source}] · {links}"
+                citation = f"Local guide [{item.source}]"
+                if "https://" not in item.answer:
+                    citation += f" · {links}"
                 route, intent = "local_guide", "SIGHTSEEING"
             else:
                 citation = f"Hotel policy [{item.source}]"
@@ -274,7 +286,8 @@ class ChatService:
             session.workflow = BookingWorkflow(state, self.repository)
             session.booking_active = False
             return answer(
-                "The unconfirmed booking request was discarded.", "booking_discarded", "BOOKING"
+                "I’ve discarded that request. Tell me new dates whenever you’re ready.",
+                "booking_discarded", "BOOKING"
             )
 
         if message.casefold().rstrip(".!? ") in _CONFIRM:
@@ -290,7 +303,10 @@ class ChatService:
                 "fr": "Réservation confirmée ! Votre référence est",
             }[language]
             return answer(
-                f"{confirmation_text} {reservation.reference}.", "booking_created", "BOOKING"
+                f"{confirmation_text} {reservation.reference}.",
+                "booking_created",
+                "BOOKING",
+                {"type": "success", "reference": reservation.reference, "language": language},
             )
 
         # Policy questions with no explicit booking details can be answered from the
@@ -495,6 +511,16 @@ class ChatService:
                 quote_text,
                 "quote",
                 "BOOKING",
+                {
+                    "type": "quote",
+                    "language": language,
+                    "room": f"{room.room_number} · {room.room_type}",
+                    "dates": f"{state.check_in:%d.%m.%Y} – {state.check_out:%d.%m.%Y}",
+                    "nights": str(quote.nights),
+                    "guests": str(state.guests),
+                    "guest_name": str(state.guest_name),
+                    "total": total_usd,
+                },
             )
 
         if policy:

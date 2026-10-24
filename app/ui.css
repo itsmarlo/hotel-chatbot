@@ -160,6 +160,32 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 #chatbot .message.bot .prose a { color: var(--bh-primary) !important; text-decoration: underline; }
 
 #thinking-status { margin: 0 .55rem; padding: 0 !important; background: transparent !important; }
+.bh-booking-card {
+  margin: .15rem .35rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #cfc3f3;
+  border-left: 4px solid var(--bh-primary);
+  border-radius: .6rem;
+  background: #fbfaff;
+  color: var(--bh-text);
+}
+.bh-card-kicker {
+  margin: 0 0 .7rem;
+  color: var(--bh-violet-deep) !important;
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.bh-booking-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem 1rem; margin: 0; }
+.bh-booking-card dl > div { min-width: 0; }
+.bh-booking-card dt { color: var(--bh-muted); font-size: .76rem; }
+.bh-booking-card dd { margin: .12rem 0 0; font-size: .92rem; font-weight: 700; overflow-wrap: anywhere; }
+.bh-booking-card dl > div:last-child dd { color: var(--bh-violet-deep); font-size: 1.1rem; }
+.bh-card-note { margin: .8rem 0 0; color: var(--bh-muted) !important; font-size: .8rem; }
+.bh-success-card { border-color: #b7dccb; border-left-color: #23815c; background: #f4fbf7; }
+.bh-success-card h3 { margin: 0; color: #175f43 !important; font-size: 1rem; overflow-wrap: anywhere; }
+#new-chat { margin: 0 .35rem .35rem; color: var(--bh-primary) !important; border: 1px solid var(--bh-primary) !important; background: var(--bh-white) !important; font-weight: 700; }
+#new-chat:hover { background: var(--bh-lavender) !important; }
 .bh-thinking {
   display: inline-flex;
   align-items: center;
@@ -241,7 +267,7 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 #send-button { flex: 0 0 6rem !important; min-width: 0 !important; }
 #confirm-booking { margin: 0 .35rem .35rem; }
 #starter-row button:focus-visible, #clear-conversation:focus-visible, #send-button:focus-visible,
-#confirm-booking:focus-visible, #message-box textarea:focus-visible {
+#confirm-booking:focus-visible, #new-chat:focus-visible, #message-box textarea:focus-visible {
   outline: 3px solid var(--bh-primary);
   outline-offset: 2px;
 }
@@ -256,4 +282,5 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   #chatbot { height: min(45dvh, 360px) !important; min-height: 250px; }
   #starter-row button { flex: 1 1 8rem; }
   #send-button { flex-basis: 4.75rem !important; }
+  .bh-booking-card dl { grid-template-columns: 1fr; }
 }
