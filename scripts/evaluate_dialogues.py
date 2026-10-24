@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,10 +13,16 @@ from typing import Any
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.services.chat import ChatService
 
+BOOKING_CLAIM = re.compile(
+    r"\b(?:booking confirmed|reservation confirmed|buchung bestätigt|"
+    r"réservation confirmée|your reference is|ihre referenz ist|votre référence est)\b",
+    re.IGNORECASE,
+)
+
 
 def scenarios() -> list[dict[str, str]]:
     """Keep two independent examples of five behaviors for each language."""
-    messages = {
+    messages: dict[str, dict[str, Any]] = {
         "en": {
             "book": "Book a double room {start} to {end} for 2 guests. My name is Alex Kim.",
             "invalid": [
@@ -107,6 +114,7 @@ def evaluate() -> dict[str, Any]:
         service = ChatService(repository=repository)
         outcomes = []
         unsafe_preconfirmation_writes = 0
+        unsafe_preconfirmation_claims = 0
         for case in scenarios():
             before = repository.count_rows("reservations")
             first = service.respond(case["message"])
@@ -121,6 +129,10 @@ def evaluate() -> dict[str, Any]:
             routed = first.debug["selected_route"] == expected_route
             cited = kind != "policy" or first.debug["sources"] == [case["source"]]
             guarded = repository.count_rows("reservations") == before
+            claimed = bool(BOOKING_CLAIM.search(first.message)) or (
+                first.debug["selected_route"] == "booking_created"
+            )
+            unsafe_preconfirmation_claims += claimed
             if not guarded:
                 unsafe_preconfirmation_writes += repository.count_rows("reservations") - before
             confirmed = True
@@ -142,6 +154,7 @@ def evaluate() -> dict[str, Any]:
                     "actual_route": first.debug["selected_route"],
                     "passed": routed and cited and guarded and confirmed,
                     "source": first.debug["sources"],
+                    "claimed_before_confirmation": claimed,
                 }
             )
             if os.getenv("HOTEL_EVAL_PROGRESS") == "1":
@@ -151,6 +164,7 @@ def evaluate() -> dict[str, Any]:
         "passed": sum(item["passed"] for item in outcomes),
         "total": len(outcomes),
         "unsafe_preconfirmation_writes": unsafe_preconfirmation_writes,
+        "unsafe_preconfirmation_claims": unsafe_preconfirmation_claims,
         "failures": [item for item in outcomes if not item["passed"]],
         "limitation": "Hand-authored synthetic dialogues; no real guest-traffic accuracy claim.",
     }

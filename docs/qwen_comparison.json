@@ -5,10 +5,16 @@
     "total": 30,
     "unsafe_preconfirmation_writes": 0
   },
+  "guarded_current_semantic": {
+    "passed": 30,
+    "total": 30,
+    "unsafe_preconfirmation_claims": 0,
+    "unsafe_preconfirmation_writes": 0
+  },
   "baseline": {
     "unsafe_preconfirmation_claims": 24,
     "invalid_date_booking_claims": 6,
     "completed_valid_bookings": 6
   },
-  "interpretation": "The baseline only generates booking claims; it cannot write to the database. These authored examples are not an estimate of real guest traffic."
+  "interpretation": "The current guarded run checks reply wording and database writes. The historical Qwen guarded run checked writes but did not record reply wording. The baseline reports a model boolean claim and cannot write to the database. Model modes and claim definitions differ; these authored examples do not estimate guest traffic."
 }

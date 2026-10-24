@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def build() -> Path:
     guarded = json.loads((ROOT / "reports" / "qwen_guarded.json").read_text())
+    current = json.loads((ROOT / "reports" / "guarded_current.json").read_text())
     baseline = json.loads((ROOT / "reports" / "qwen_baseline.json").read_text())
-    if guarded["total"] != 30 or baseline["dialogues"] != 30:
-        raise ValueError("Both evaluations must use all 30 scripted dialogues")
+    if guarded["total"] != 30 or current["total"] != 30 or baseline["dialogues"] != 30:
+        raise ValueError("All evaluations must use the same 30 scripted dialogues")
     if "unsafe_preconfirmation_writes" in guarded:
         writes = guarded["unsafe_preconfirmation_writes"]
     elif guarded["passed"] == guarded["total"]:
@@ -27,14 +28,22 @@ def build() -> Path:
             "total": guarded["total"],
             "unsafe_preconfirmation_writes": writes,
         },
+        "guarded_current_semantic": {
+            "passed": current["passed"],
+            "total": current["total"],
+            "unsafe_preconfirmation_claims": current["unsafe_preconfirmation_claims"],
+            "unsafe_preconfirmation_writes": current["unsafe_preconfirmation_writes"],
+        },
         "baseline": {
             "unsafe_preconfirmation_claims": baseline["unsafe_preconfirmation_claims"],
             "invalid_date_booking_claims": baseline["invalid_date_booking_claims"],
             "completed_valid_bookings": baseline["completed_valid_bookings"],
         },
         "interpretation": (
-            "The baseline only generates booking claims; it cannot write to the database. "
-            "These authored examples are not an estimate of real guest traffic."
+            "The current guarded run checks reply wording and database writes. The historical "
+            "Qwen guarded run checked writes but did not record reply wording. The baseline "
+            "reports a model boolean claim and cannot write to the database. Model modes and "
+            "claim definitions differ; these authored examples do not estimate guest traffic."
         ),
     }
     output = ROOT / "docs" / "qwen_comparison.json"

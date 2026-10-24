@@ -19,3 +19,4 @@ models/*
 reports/*
 !reports/.gitkeep
 !reports/qwen_*.json
+!reports/guarded_current.json

@@ -18,8 +18,10 @@ proposals appear in API debug output and are not used to update reservation stat
 ## Policy retrieval
 
 Run `HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_retrieval.py`.
-On 20 supported questions, semantic retrieval hits the expected source first on 17 (85%). It
-rejects both unsupported questions in the small retrieval set. The same corpus and questions
+On 27 supported questions, including seven Beirut sightseeing questions, semantic retrieval
+hits the expected source first on 24 (88.9%). It rejects both unsupported questions in the
+small retrieval set. On macOS, setting `OMP_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false` avoids
+an intermittent local model crash during this run. The same corpus and questions
 were authored for this project, so the result can be optimistic.
 
 ## End-to-end dialogue checks
@@ -29,7 +31,14 @@ Thirty dialogues, ten each in English, German, and French, passed on 2026-10-19.
 contains two completed bookings, two unconfirmed quotes, two invalid date requests, two grounded
 policy questions, and two unsupported questions. The script checks the database before
 confirmation and after successful confirmation. All six completed bookings required the exact
-confirmation phrase, and none of the other 24 dialogues created a reservation.
+confirmation phrase, and none of the other 24 dialogues created a reservation. The current
+evaluator separately counts premature booking claims in the assistant reply and database
+writes. A second, additional set of challenge prompts covers sightseeing phrasing, mixed
+language, invalid dates, ambiguous confirmation, and changed checkout dates. Run
+`python scripts/evaluate_challenges.py` to check it. These prompts were also authored for
+the project and are not independently labeled guest traffic. The 11 additional prompts
+passed locally. The 30 original dialogues passed in semantic mode with zero premature
+booking claims and zero premature database writes.
 
 ## Qwen proposal and single-prompt comparison
 
@@ -60,8 +69,11 @@ iterative regression check: the same authored questions informed the fix and the
 The single-prompt baseline claimed a booking before confirmation in 24/30 cases, including
 all six invalid-date cases. It claimed all six valid bookings after confirmation. The guarded
 system created those six reservations only after exact confirmation, as verified in SQLite.
-The observed pre-confirmation difference is 24 model claims versus zero guarded database
-writes; these are different outcome types, so no real-world relative-risk estimate is implied.
+The current guarded semantic run measures both claim wording and database effects before
+confirmation: 0/30 premature text claims and 0 database writes. The historical Qwen guarded
+report measured writes but did not record wording. The Qwen baseline's `booking_created`
+boolean is a different claim measure and has no database action to compare directly. These
+authored results do not support a real-world relative-risk estimate.
 
 The baseline criterion counts the model's boolean booking claim, even where its prose is
 inconsistent. It therefore measures unsafe model intent, not whether a guest would believe the

@@ -19,6 +19,13 @@
   {"question": "Quand l'hôtel a-t-il du courant pendant une coupure ?", "language": "fr", "source": "generator"},
   {"question": "Will I get money back if I change my mind?", "language": "en", "source": "cancellation"},
   {"question": "Facturez-vous des frais maintenant?", "language": "fr", "source": "payment"},
+  {"question": "What are some sightseeing ideas in Beirut?", "language": "en", "source": "beirut-sightseeing"},
+  {"question": "Welche Sehenswürdigkeiten gibt es in Beirut?", "language": "de", "source": "beirut-sightseeing"},
+  {"question": "Que voir à Beyrouth ?", "language": "fr", "source": "beirut-sightseeing"},
+  {"question": "Tell me about the Sursock Museum", "language": "en", "source": "sursock-museum"},
+  {"question": "Was ist das Nationalmuseum von Beirut?", "language": "de", "source": "national-museum-beirut"},
+  {"question": "Peut-on visiter Beit Beirut ?", "language": "fr", "source": "beit-beirut"},
+  {"question": "Where is the Beirut Corniche?", "language": "en", "source": "beirut-corniche"},
   {"question": "Do you offer scuba lessons?", "language": "en", "source": null},
   {"question": "Is there a swimming pool?", "language": "en", "source": null}
 ]
