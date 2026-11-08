@@ -23,6 +23,7 @@ from hotel_assistant.rag.policies import PolicyRetriever, Retrieval
 from hotel_assistant.services.booking import BookingWorkflow
 from hotel_assistant.services.interpret import (
     contextual_booking_changes,
+    has_booking_terms,
     is_booking_request,
     language_of,
 )
@@ -48,13 +49,13 @@ _UNSAFE_REPLY = re.compile(
 _FACT_NUMBERS = re.compile(r"\d+(?::\d+)?(?:\.\d+)*")
 _PROMPTS = {
     "en": {
-        "guest_name": "What’s your name for the booking?",
+        "guest_name": "What’s your full name for the booking?",
         "check_in": "What’s your check-in date? Please use DD.MM.YYYY, for example 12.06.2027.",
         "check_out": "What’s your check-out date? Please use DD.MM.YYYY, for example 14.06.2027.",
         "guests": "How many guests will be staying?",
     },
     "de": {
-        "guest_name": "Auf welchen Namen darf ich die Buchung anlegen?",
+        "guest_name": "Wie lautet Ihr vollständiger Name für die Buchung?",
         "check_in": (
             "Wann möchten Sie anreisen? Bitte im Format DD.MM.YYYY, zum Beispiel 12.06.2027."
         ),
@@ -64,7 +65,7 @@ _PROMPTS = {
         "guests": "Wie viele Gäste werden übernachten?",
     },
     "fr": {
-        "guest_name": "À quel nom dois-je faire la réservation ?",
+        "guest_name": "Quel est votre nom complet pour la réservation ?",
         "check_in": (
             "Quelle est votre date d’arrivée ? Utilisez le format DD.MM.YYYY, "
             "par exemple 12.06.2027."
@@ -130,6 +131,7 @@ class _Session:
     booked: bool = False
     booking_active: bool = False
     language: str = "en"
+    quote_card: dict[str, str] | None = None
 
 
 class ChatService:
@@ -226,12 +228,16 @@ class ChatService:
             "model_entities": {},
             "proposed_tool": None,
             "response_mode": "template",
+            "llm_status": "not_used_for_route",
         }
         def answer(
             text: str, route: str, intent: str, card: dict[str, str] | None = None
         ) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
+            debug["llm_status"] = (
+                "not_configured" if self.answer_generator is None else "fallback"
+            ) if route in _GENERATIVE_ROUTES else "not_used_for_route"
             if self.answer_generator is not None and route in _GENERATIVE_ROUTES:
                 # The source citation is application-owned and never entrusted to the LLM.
                 body, separator, citation = text.partition("\n\nSource: ")
@@ -250,6 +256,18 @@ class ChatService:
                 if self._valid_generated_reply(body, generated, route):
                     text = generated + (separator + citation if separator else "")
                     debug["response_mode"] = "llm"
+                    debug["llm_status"] = "used"
+            if route == "quote":
+                session.quote_card = card
+            elif (
+                route in {"policy", "local_guide", "unsupported_policy"}
+                and session.quote_card is not None
+            ):
+                card = session.quote_card
+            else:
+                if session.quote_card is not None:
+                    session.workflow.discard_quote()
+                session.quote_card = None
             return ChatResult(identifier, text, debug, state, card)
 
         def knowledge_answer(item: Retrieval) -> ChatResult:
@@ -269,7 +287,8 @@ class ChatService:
             state.record_user_turn()
         except TurnLimitExceeded:
             return answer(
-                "This conversation has reached its 10-turn limit. Start a new conversation.",
+                f"This conversation has reached its {state.max_turns}-turn limit. "
+                "Start a new conversation.",
                 "turn_limit",
                 "OTHER",
             )
@@ -331,7 +350,10 @@ class ChatService:
         if (
             question
             and not initial_changes
-            and not is_booking_request(message, state, initial_changes)
+            and (
+                session.quote_card is not None
+                or not is_booking_request(message, state, initial_changes)
+            )
         ):
             policy = self.retriever.retrieve(message, language)
             if policy:
@@ -438,7 +460,7 @@ class ChatService:
         }
 
         policy = self.retriever.retrieve(message, language)
-        if policy and question and not changes:
+        if policy and not changes and (question or not has_booking_terms(message)):
             return knowledge_answer(policy)
 
         if is_booking_request(message, state, changes) or (
@@ -460,7 +482,26 @@ class ChatService:
                     )
             missing = state.missing_required_fields()
             if missing:
-                return answer(_PROMPTS[language][missing[0]], "clarification", "BOOKING")
+                prompt = _PROMPTS[language][missing[0]]
+                if (
+                    missing[0] == "guest_name"
+                    and state.check_in is not None and state.check_out is not None
+                ):
+                    dates = f"{state.check_in:%d.%m.%Y}–{state.check_out:%d.%m.%Y}"
+                    lead = {
+                        "en": f"I have your dates, {dates}. ",
+                        "de": f"Ich habe Ihre Reisedaten, {dates}. ",
+                        "fr": f"J’ai vos dates de séjour, {dates}. ",
+                    }[language]
+                    prompt = lead + prompt
+                if "guest_name" in changes and state.guest_name:
+                    thanks = {
+                        "en": f"Thanks, {state.guest_name}. ",
+                        "de": f"Danke, {state.guest_name}. ",
+                        "fr": f"Merci, {state.guest_name}. ",
+                    }[language]
+                    prompt = thanks + prompt
+                return answer(prompt, "clarification", "BOOKING")
             try:
                 rooms = session.workflow.search_rooms()
                 if not rooms:
@@ -520,6 +561,9 @@ class ChatService:
                     "guests": str(state.guests),
                     "guest_name": str(state.guest_name),
                     "total": total_usd,
+                    "check_in": state.check_in.isoformat(),
+                    "check_out": state.check_out.isoformat(),
+                    "room_type": room.room_type,
                 },
             )
 

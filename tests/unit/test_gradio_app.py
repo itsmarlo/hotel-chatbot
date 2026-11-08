@@ -10,19 +10,18 @@ from app.gradio_app import (
     confirmation_phrase,
     create_demo,
     fresh_chat,
+    pipeline_card,
 )
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.services.chat import ChatResult, ChatService
 
 
-def test_create_demo_builds_chat_only_interface() -> None:
+def test_create_demo_builds_booking_editor_and_demo_trace() -> None:
     demo = create_demo()
 
     assert isinstance(demo, gr.Blocks)
-    assert not any(
-        isinstance(block, (gr.DateTime, gr.Number, gr.JSON))
-        for block in demo.blocks.values()
-    )
+    assert any(isinstance(block, gr.Number) for block in demo.blocks.values())
+    assert not any(isinstance(block, gr.JSON) for block in demo.blocks.values())
 
 
 def test_fresh_chat_starts_with_a_welcome_message() -> None:
@@ -87,3 +86,87 @@ def test_booking_flow_supplies_review_and_success_cards(tmp_path: Path) -> None:
     assert confirmed.card is not None
     assert confirmed.card["type"] == "success"
     assert confirmed.card["reference"].startswith("HTL-")
+
+
+def test_policy_question_keeps_quote_available_to_confirm(tmp_path: Path) -> None:
+    service = ChatService(repository=HotelRepository(tmp_path / "hotel.db"))
+    quote = service.respond(
+        "Book a double room 2030-08-03 to 2030-08-05 for 2 guests. My name is Sam Lee."
+    )
+    policy = service.respond("What time is check-in?", quote.session_id)
+
+    assert policy.debug["selected_route"] == "policy"
+    assert policy.card == quote.card
+    assert confirmation_phrase(policy) == "confirm booking"
+    assert "15:00" in policy.message
+
+
+def test_changed_quote_replaces_old_details_before_confirmation(tmp_path: Path) -> None:
+    service = ChatService(repository=HotelRepository(tmp_path / "hotel.db"))
+    quote = service.respond(
+        "Book a double room 2030-08-03 to 2030-08-05 for 2 guests. My name is Sam Lee."
+    )
+    changed = service.respond(
+        "Change my booking to 2030-08-04 to 2030-08-07 for 2 guests in a double room",
+        quote.session_id,
+    )
+
+    assert changed.debug["selected_route"] == "quote"
+    assert changed.card is not None
+    assert changed.card["dates"] == "04.08.2030 – 07.08.2030"
+    assert changed.card["total"] == "US$537.00"
+    assert changed.card != quote.card
+
+
+def test_invalid_edit_cannot_leave_hidden_quote_confirmable(tmp_path: Path) -> None:
+    service = ChatService(repository=HotelRepository(tmp_path / "hotel.db"))
+    quote = service.respond(
+        "Book a double room 2030-08-03 to 2030-08-05 for 2 guests. My name is Sam Lee."
+    )
+    invalid = service.respond(
+        "Change my booking to 2030-08-07 to 2030-08-04 for 2 guests in a double room",
+        quote.session_id,
+    )
+    confirmation = service.respond("confirm booking", quote.session_id)
+
+    assert invalid.debug["selected_route"] == "clarification"
+    assert invalid.card is None
+    assert confirmation.debug["selected_route"] == "clarification"
+    assert "search for rooms first" in confirmation.message
+
+
+def test_pipeline_card_escapes_debug_values() -> None:
+    html = pipeline_card({
+        "selected_route": "policy", "detected_intent": "HOTEL_POLICY",
+        "extracted_slots": {"<script>": "ignored"},
+        "sources": ["check-in"], "response_mode": "template",
+    })
+
+    assert "&lt;script&gt;" in html
+    assert "<script>" not in html
+    assert "check-in" in html
+
+
+def test_ui_keeps_review_during_policy_answer_and_updates_edit(tmp_path: Path) -> None:
+    service = ChatService(repository=HotelRepository(tmp_path / "hotel.db"))
+    demo = create_demo(service)
+    submit = next(
+        fn.fn for fn in demo.fns.values()
+        if getattr(fn.fn, "__name__", "") == "submit_message"
+    )
+    edit = next(
+        fn.fn for fn in demo.fns.values()
+        if getattr(fn.fn, "__name__", "") == "edit_booking"
+    )
+    first = submit(
+        "Book a double room 2030-08-03 to 2030-08-05 for 2 guests. My name is Sam Lee.",
+        fresh_chat()[0], None, "",
+    )
+    policy = submit("What time is check-in?", first[1], first[2], first[3])
+    changed = edit("2030-08-04", "2030-08-07", 2, "Double", policy[1], policy[2], policy[3])
+
+    assert "15:00" in policy[1][-1]["content"]
+    assert policy[7]["visible"] is True
+    assert policy[4]["visible"] is True
+    assert changed[10]["value"] == "2030-08-04"
+    assert "US$537.00" in changed[7]["value"]

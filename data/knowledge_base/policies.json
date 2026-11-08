@@ -2,7 +2,7 @@
   {
     "id": "check-in",
     "title": "Check-in and check-out",
-    "keywords": ["check in", "check-in", "check out", "check-out", "arrival", "arrive", "departure", "ankunft", "abreise", "einchecken", "arrivée", "arriver", "départ"],
+    "keywords": ["check in", "check-in", "check out", "check-out", "arrival", "arrive", "enter my room", "departure", "ankunft", "abreise", "einchecken", "arrivée", "arriver", "départ"],
     "en": "Check-in starts at 15:00 and check-out is by 11:00. Please contact reception in advance for a late arrival.",
     "de": "Der Check-in beginnt um 15:00 Uhr und der Check-out ist bis 11:00 Uhr. Bitte kontaktieren Sie die Rezeption vor einer späten Anreise.",
     "fr": "L'enregistrement commence à 15 h et le départ doit avoir lieu avant 11 h. Pour une arrivée tardive, veuillez contacter la réception à l'avance."
@@ -38,6 +38,62 @@
     "en": "This prototype does not accept payments. Room prices shown in the demo are synthetic and are not a payable offer.",
     "de": "Dieser Prototyp nimmt keine Zahlungen entgegen. Die angezeigten Zimmerpreise sind synthetische Demodaten und kein zahlbares Angebot.",
     "fr": "Ce prototype n'accepte aucun paiement. Les prix affichés sont des données de démonstration et ne constituent pas une offre payable."
+  },
+  {
+    "id": "pets",
+    "title": "Travelling with pets",
+    "keywords": ["pet", "pets", "dog", "dogs", "cat", "cats", "pet-friendly", "animal", "haustier", "haustiere", "hund", "hunde", "katze", "katzen", "tierfreundlich", "animaux", "animal de compagnie", "chien", "chat", "avec mon animal"],
+    "en": "Pets are allowed only with advance approval from reception. Please ask reception about a suitable room before travelling; this demo chatbot cannot approve or add a pet to a reservation.",
+    "de": "Haustiere sind nur nach vorheriger Zustimmung der Rezeption erlaubt. Fragen Sie vor der Anreise nach einem geeigneten Zimmer; dieser Demo-Chatbot kann ein Haustier weder genehmigen noch zur Buchung hinzufügen.",
+    "fr": "Les animaux de compagnie sont admis uniquement avec l'accord préalable de la réception. Demandez une chambre adaptée avant votre arrivée ; ce chatbot de démonstration ne peut ni autoriser ni ajouter un animal à la réservation."
+  },
+  {
+    "id": "breakfast",
+    "title": "Breakfast",
+    "keywords": ["breakfast", "morning meal", "frühstück", "fruehstueck", "petit-déjeuner", "petit déjeuner"],
+    "en": "Breakfast is served in the dining room from 07:00 to 10:30. Please ask reception about dietary needs; this demo does not add meals to a reservation.",
+    "de": "Das Frühstück wird von 07:00 bis 10:30 Uhr im Speiseraum serviert. Fragen Sie bei besonderen Ernährungswünschen an der Rezeption nach; diese Demo fügt einer Buchung keine Mahlzeiten hinzu.",
+    "fr": "Le petit-déjeuner est servi dans la salle à manger de 07 h à 10 h 30. Pour les besoins alimentaires particuliers, renseignez-vous à la réception ; cette démonstration n'ajoute pas de repas à une réservation."
+  },
+  {
+    "id": "fitness-spa",
+    "title": "Fitness and spa facilities",
+    "keywords": ["gym and spa", "fitness and spa", "sport and spa", "sports and spa", "spa and gym", "spa and fitness", "sport und spa", "fitness und spa", "sport et spa", "salle de sport et spa"],
+    "en": "Hotel guests can use the fitness room daily from 06:00 to 22:00. The spa is open daily from 10:00 to 20:00; treatments require an appointment with reception. This demo cannot book spa services.",
+    "de": "Der Fitnessraum ist für Hotelgäste täglich von 06:00 bis 22:00 Uhr geöffnet. Der Spa-Bereich ist täglich von 10:00 bis 20:00 Uhr geöffnet; für Behandlungen ist ein Termin über die Rezeption nötig. Diese Demo bucht keine Spa-Leistungen.",
+    "fr": "La salle de sport est ouverte tous les jours de 6 h à 22 h pour les clients de l'hôtel. Le spa est ouvert de 10 h à 20 h ; les soins nécessitent un rendez-vous auprès de la réception. Cette démonstration ne réserve pas de prestations de spa."
+  },
+  {
+    "id": "fitness",
+    "title": "Fitness and sport",
+    "keywords": ["gym", "fitness", "sport", "sports", "exercise", "workout", "training", "fitnessraum", "fitnessstudio", "sportmöglichkeiten", "salle de sport", "faire du sport", "entraînement"],
+    "en": "The fitness room is open daily from 06:00 to 22:00 for hotel guests. This demo does not reserve fitness sessions.",
+    "de": "Der Fitnessraum ist für Hotelgäste täglich von 06:00 bis 22:00 Uhr geöffnet. Diese Demo reserviert keine Trainingseinheiten.",
+    "fr": "La salle de sport est ouverte tous les jours de 6 h à 22 h pour les clients de l'hôtel. Cette démonstration ne réserve pas de séances."
+  },
+  {
+    "id": "spa",
+    "title": "Spa and wellness",
+    "keywords": ["spa", "wellness", "massage", "treatment", "sauna", "dampfbad", "soin", "soins", "hammam", "détente"],
+    "en": "The spa is open daily from 10:00 to 20:00. Treatments require an appointment with reception; this demo cannot book spa services.",
+    "de": "Der Spa-Bereich ist täglich von 10:00 bis 20:00 Uhr geöffnet. Für Behandlungen ist ein Termin über die Rezeption nötig; diese Demo bucht keine Spa-Leistungen.",
+    "fr": "Le spa est ouvert tous les jours de 10 h à 20 h. Les soins nécessitent un rendez-vous auprès de la réception ; cette démonstration ne réserve pas de prestations de spa."
+  },
+  {
+    "id": "wifi",
+    "title": "Wi-Fi",
+    "keywords": ["wifi", "wi-fi", "internet", "wireless", "wlan", "connexion", "connexion internet"],
+    "en": "Complimentary Wi-Fi is available in guest rooms and public areas.",
+    "de": "Kostenloses WLAN ist in den Gästezimmern und öffentlichen Bereichen verfügbar.",
+    "fr": "Une connexion Wi-Fi gratuite est disponible dans les chambres et les espaces communs."
+  },
+  {
+    "id": "parking",
+    "title": "Parking",
+    "keywords": ["parking", "park", "car park", "garage", "parkplatz", "parken", "stationnement", "garer", "voiture"],
+    "en": "Parking is limited and must be requested in advance through reception. This demo cannot reserve a parking space.",
+    "de": "Parkplätze sind begrenzt und müssen vorab über die Rezeption angefragt werden. Diese Demo reserviert keinen Parkplatz.",
+    "fr": "Les places de stationnement sont limitées et doivent être demandées à l'avance à la réception. Cette démonstration ne réserve pas de place."
   },
   {
     "id": "beirut-sightseeing",

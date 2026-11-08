@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from hotel_assistant.api.main import create_app
 from hotel_assistant.config import Settings
 from hotel_assistant.database.repository import HotelRepository
+from hotel_assistant.services.chat import ChatService
 
 
 def test_health_reports_database_readiness(tmp_path: Path) -> None:
@@ -204,6 +205,91 @@ def test_booking_accepts_bare_name_and_contextual_checkout_date(tmp_path: Path) 
     assert guests["debug"]["selected_route"] == "quote"
     assert "12.12.2027" in guests["message"]
     assert "14.12.2027" in guests["message"]
+
+
+def test_booking_accepts_single_word_name_after_dates(tmp_path: Path) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "single_name.db"))) as client:
+        first = client.post("/chat", json={"message": "01.12.2030 until 12.12.2030"}).json()
+        named = client.post(
+            "/chat", json={"message": "Carlo", "session_id": first["session_id"]}
+        ).json()
+
+    assert "full name" in first["message"].casefold()
+    assert "01.12.2030–12.12.2030" in first["message"]
+    assert first["debug"]["llm_status"] == "not_used_for_route"
+    assert named["debug"]["extracted_slots"]["guest_name"] == "Carlo"
+    assert "How many guests" in named["message"]
+
+
+def test_booking_keeps_lowercase_name_before_dates(tmp_path: Path) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "lowercase_name.db"))) as client:
+        first = client.post("/chat", json={"message": "I would like to book a room"}).json()
+        named = client.post(
+            "/chat", json={"message": "alex", "session_id": first["session_id"]}
+        ).json()
+        dated = client.post(
+            "/chat", json={"message": "12.01.2027", "session_id": first["session_id"]}
+        ).json()
+
+    assert "full name" in first["message"].casefold()
+    assert named["debug"]["extracted_slots"]["guest_name"] == "alex"
+    assert "check-in" in named["message"].casefold()
+    assert "check-out" in dated["message"].casefold()
+
+
+def test_ten_policy_questions_keep_quote_confirmable(tmp_path: Path) -> None:
+    repository = HotelRepository(tmp_path / "questions.db")
+    service = ChatService(repository=repository)
+    quote = service.respond(
+        "Book a double room 2030-08-03 to 2030-08-05 for 2 guests. My name is Sam Lee."
+    )
+    assert quote.card is not None
+    questions = (
+        ("Can I bring my dog?", "pets"),
+        ("Tell me about breakfast", "breakfast"),
+        ("Is there a gym?", "fitness"),
+        ("When does the spa open?", "spa"),
+        ("Do you have Wi-Fi?", "wifi"),
+        ("Can I park my car?", "parking"),
+        ("What time is check-in?", "check-in"),
+        ("Do I need a passport?", "identification"),
+        ("When does the generator run?", "generator"),
+        ("What is the cancellation policy?", "cancellation"),
+    )
+    for question, expected_source in questions:
+        answer = service.respond(question, quote.session_id)
+        assert answer.debug["selected_route"] == "policy"
+        assert answer.debug["sources"] == [expected_source]
+        assert answer.card == quote.card
+        assert repository.count_rows("reservations") == 3
+
+    unsupported = service.respond("Do you offer scuba lessons?", quote.session_id)
+    assert unsupported.debug["selected_route"] == "unsupported_policy"
+    assert unsupported.card == quote.card
+
+    confirmed = service.respond("confirm booking", quote.session_id)
+    assert confirmed.debug["selected_route"] == "booking_created"
+    assert repository.count_rows("reservations") == 4
+
+
+@pytest.mark.parametrize(
+    ("question", "source", "answer_text"),
+    [
+        ("Darf ich mein Haustier mitbringen?", "pets", "Haustiere"),
+        ("À quelle heure est le petit-déjeuner ?", "breakfast", "petit-déjeuner"),
+        ("Gibt es Sport und Spa?", "fitness-spa", "Fitnessraum"),
+        ("Y a-t-il une salle de sport et spa ?", "fitness-spa", "salle de sport"),
+    ],
+)
+def test_new_hotel_topics_answer_in_guest_language(
+    tmp_path: Path, question: str, source: str, answer_text: str
+) -> None:
+    service = ChatService(repository=HotelRepository(tmp_path / "language.db"))
+    result = service.respond(question)
+
+    assert result.debug["selected_route"] == "policy"
+    assert result.debug["sources"] == [source]
+    assert answer_text in result.message
 
 
 def test_german_fallback_uses_german_date_format(

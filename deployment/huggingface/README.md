@@ -14,6 +14,7 @@ app_file: app.py
 An academic demonstration for a fictional hotel. It answers questions from authored hotel
 policies and a cited Beirut sightseeing guide, and creates synthetic reservations only after
 the guest confirms a quote. No payment is taken.
+Pet, breakfast, fitness, spa, Wi-Fi, and parking details are fictional demo policies.
 
 The running Space uses multilingual FAISS retrieval and the trained intent model. A hosted
 model router can rewrite verified hotel policy text using Hugging Face, OpenRouter, or OpenAI. It

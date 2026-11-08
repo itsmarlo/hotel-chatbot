@@ -20,8 +20,9 @@ interface, then a single-prompt baseline and comparison.
 
 - Done: authored English, French and German policy answers with source metadata.
 - Done: multilingual Sentence-Transformers and local FAISS option, plus a lightweight fallback.
-- Done: a small authored retrieval check has 17/20 semantic Hit@1 and rejects 2/2 unsupported
+- Done: an authored retrieval check has 45/48 semantic Hit@1 and rejects 3/3 unsupported
   questions; this does not establish real-world accuracy.
+- Done: a booking can answer ten policy questions before confirmation without a database write.
 - Next: expand the held-out set and calibrate the abstention threshold using realistic questions.
 
 ## Phase 4: LLM interpretation and conversation controller

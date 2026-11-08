@@ -162,7 +162,7 @@ def test_llm_bad_reply_falls_back_to_safe_clarification(tmp_path: Path) -> None:
     result = service.respond("I want to book a room")
 
     assert result.debug["response_mode"] == "template"
-    assert "your name" in result.message
+    assert "full name" in result.message
     assert calls == []
 
 
@@ -185,5 +185,5 @@ def test_llm_cannot_request_extra_booking_fields(tmp_path: Path) -> None:
     result = service.respond("Ich möchte ein Zimmer buchen")
 
     assert result.debug["response_mode"] == "template"
-    assert "welchen Namen" in result.message
+    assert "vollständiger Name" in result.message
     assert "Datum" not in result.message

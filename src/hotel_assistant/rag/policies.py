@@ -156,7 +156,7 @@ class PolicyRetriever:
             query = np.asarray(encoded, dtype="float32").reshape(1, -1)
             scores, indices = self._index.search(query, 1)
             score = float(scores[0][0])
-            if score < 0.38:
+            if score < 0.48:
                 return None
             policy = self._indexed_policies[int(indices[0][0])]
         else:

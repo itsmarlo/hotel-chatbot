@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,11 @@ def fresh_chat() -> tuple[list[dict[str, str]], str, None, str, Any, Any]:
 
 def confirmation_phrase(result: ChatResult) -> str | None:
     """Only offer the confirm action when the booking guard has issued a quote."""
+    if result.card and result.card.get("type") == "quote":
+        return {
+            "en": "confirm booking", "de": "Buchung bestätigen",
+            "fr": "confirmer la réservation",
+        }[result.card["language"]]
     if result.debug.get("selected_route") != "quote":
         return None
     if "Buchung bestätigen" in result.message:
@@ -109,6 +115,40 @@ def booking_card(card: dict[str, str] | None) -> str:
     )
 
 
+def pipeline_card(debug: dict[str, Any]) -> str:
+    """Show application decisions without rendering raw model output as HTML."""
+    extracted = debug.get("extracted_slots", {})
+    fields = ", ".join(
+        f"{key}: {'provided' if key == 'guest_name' else value}"
+        for key, value in extracted.items()
+    ) or "None"
+    llm_status = {
+        "not_used_for_route": "Not used for this step",
+        "not_configured": "No hosted model configured",
+        "fallback": "Verified text used after model fallback",
+        "used": "Hosted model used",
+    }.get(debug.get("llm_status"), "Unknown")
+    rows = (
+        ("Route", debug.get("selected_route")),
+        ("Intent", debug.get("detected_intent")),
+        ("Confidence", debug.get("confidence")),
+        ("Extracted fields", fields),
+        ("Source", ", ".join(debug.get("sources", [])) or "None"),
+        ("Response", debug.get("response_mode")),
+        ("LLM", llm_status),
+        ("Proposed tool", debug.get("proposed_tool")),
+        ("Database action", (
+            "Reservation created" if debug.get("selected_route") == "booking_created" else "None"
+        )),
+    )
+    details = "".join(
+        f"<div><dt>{escape(label)}</dt>"
+        f"<dd>{escape(str(value if value is not None else 'None'))}</dd></div>"
+        for label, value in rows
+    )
+    return f'<dl class="bh-pipeline">{details}</dl>'
+
+
 def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
     """Build a single conversation surface over the guarded chat service."""
     service = chat_service or ChatService()
@@ -118,7 +158,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         history: list[dict[str, Any]],
         session_id: str | None,
         pending_confirmation: str,
-    ) -> tuple[str, list[dict[str, Any]], str | None, str, Any, Any, Any, Any, Any]:
+    ) -> tuple[Any, ...]:
         if not message.strip():
             return (
                 "", history, session_id, pending_confirmation,
@@ -126,6 +166,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 gr.update(visible=len(history) <= 1),
                 gr.update(visible=False),
                 gr.update(), gr.update(),
+                *(gr.skip() for _ in range(6)),
             )
         if len(message) > 4_000:
             updated_history = [
@@ -139,16 +180,17 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(), gr.update(),
+                *(gr.skip() for _ in range(6)),
             )
         result = service.respond(message, session_id)
         chat_reply = result.message
-        if result.card and result.card["type"] == "quote":
+        if result.debug["selected_route"] == "quote" and result.card:
             chat_reply = {
                 "en": "I found a room for your stay. Please review the details below.",
                 "de": "Ich habe ein Zimmer gefunden. Bitte prüfen Sie die Angaben unten.",
                 "fr": "J’ai trouvé une chambre. Vérifiez les détails ci-dessous.",
             }[result.card["language"]]
-        elif result.card and result.card["type"] == "success":
+        elif result.debug["selected_route"] == "booking_created" and result.card:
             chat_reply = {
                 "en": "Your booking is confirmed. Keep the reference below for your records.",
                 "de": "Ihre Buchung ist bestätigt. Bewahren Sie die Referenz unten auf.",
@@ -160,6 +202,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             {"role": "assistant", "content": chat_reply},
         ]
         phrase = confirmation_phrase(result)
+        quote = result.card if result.card and result.card["type"] == "quote" else None
         return (
             "", updated_history, result.session_id, phrase or "",
             gr.update(visible=phrase is not None),
@@ -167,18 +210,50 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             gr.update(visible=False),
             gr.update(value=booking_card(result.card), visible=bool(result.card)),
             gr.update(visible=bool(result.card and result.card["type"] == "success")),
+            gr.update(visible=bool(quote)),
+            gr.update(value=quote["check_in"] if quote else ""),
+            gr.update(value=quote["check_out"] if quote else ""),
+            gr.update(value=int(quote["guests"]) if quote else 1),
+            gr.update(value=quote["room_type"] if quote else "Double"),
+            gr.update(value=pipeline_card(result.debug)),
         )
+
+    def edit_booking(
+        check_in: str, check_out: str, guests: int | float | None, room_type: str,
+        history: list[dict[str, Any]], session_id: str | None, pending_confirmation: str,
+    ) -> tuple[Any, ...]:
+        try:
+            arrival = date.fromisoformat(check_in.strip())
+            departure = date.fromisoformat(check_out.strip())
+            if (
+                departure <= arrival or guests is None or int(guests) != guests
+                or guests < 1 or room_type not in {"Single", "Double", "Family", "Suite"}
+            ):
+                raise ValueError
+        except (TypeError, ValueError):
+            gr.Warning(
+                "Use valid YYYY-MM-DD dates, with checkout after check-in, "
+                "and at least one guest."
+            )
+            return tuple(gr.skip() for _ in range(15))
+        update = (
+            f"Change my booking to {arrival.isoformat()} to {departure.isoformat()} "
+            f"for {int(guests)} guests in a {room_type.lower()} room"
+        )
+        return submit_message(update, history, session_id, pending_confirmation)
 
     def show_thinking(message: str) -> Any:
         return gr.update(visible=bool(message.strip()))
 
     def reset_session(
         session_id: str | None,
-    ) -> tuple[list[dict[str, str]], str, None, str, Any, Any, Any, Any, Any]:
+    ) -> tuple[Any, ...]:
         service.reset(session_id)
         return (
             *fresh_chat(), gr.update(visible=False),
             gr.update(value="", visible=False), gr.update(visible=False),
+            gr.update(visible=False), gr.update(value=""), gr.update(value=""),
+            gr.update(value=1), gr.update(value="Double"), gr.update(value=""),
         )
 
     with gr.Blocks(title="Bellhob | Beit Zeitouna") as demo:
@@ -229,6 +304,19 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                     elem_id="thinking-status",
                 )
                 review = gr.HTML(value="", visible=False, elem_id="booking-review")
+                with gr.Accordion(
+                    "Edit stay details", open=False, visible=False, elem_id="booking-editor"
+                ) as editor:
+                    with gr.Row():
+                        edit_check_in = gr.Textbox(label="Check-in (YYYY-MM-DD)")
+                        edit_check_out = gr.Textbox(label="Check-out (YYYY-MM-DD)")
+                    with gr.Row():
+                        edit_guests = gr.Number(label="Guests", value=1, minimum=1, precision=0)
+                        edit_room = gr.Dropdown(
+                            label="Room type", choices=["Single", "Double", "Family", "Suite"],
+                            value="Double",
+                        )
+                    apply_edit = gr.Button("Update quote", variant="secondary")
                 confirm = gr.Button(
                     "Confirm booking",
                     variant="primary",
@@ -253,6 +341,10 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                         elem_id="message-box",
                     )
                     send = gr.Button("Send", variant="primary", scale=1, elem_id="send-button")
+                with gr.Accordion(
+                    "How Bellhob decided · demo view", open=False, elem_id="pipeline-panel"
+                ):
+                    pipeline = gr.HTML(value="Ask a question to see the decision path.")
             gr.HTML(
                 '<p class="bh-footnote">English · Deutsch · Français '
                 '<span aria-hidden="true">·</span> '
@@ -262,12 +354,20 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         inputs = [message, chatbot, session, pending_confirmation]
         outputs = [
             message, chatbot, session, pending_confirmation, confirm, starters, thinking,
-            review, new_chat,
+            review, new_chat, editor, edit_check_in, edit_check_out, edit_guests, edit_room,
+            pipeline,
         ]
         reset_outputs = [
             chatbot, message, session, pending_confirmation, confirm, starters, thinking,
-            review, new_chat,
+            review, new_chat, editor, edit_check_in, edit_check_out, edit_guests, edit_room,
+            pipeline,
         ]
+        apply_edit.click(
+            edit_booking,
+            inputs=[edit_check_in, edit_check_out, edit_guests, edit_room, chatbot, session,
+                    pending_confirmation],
+            outputs=outputs,
+        )
         for button, (_, question) in zip(prompt_buttons, STARTER_QUESTIONS, strict=True):
             button.click(lambda text=question: text, outputs=[message], queue=False).then(
                 show_thinking, inputs=[message], outputs=[thinking], queue=False

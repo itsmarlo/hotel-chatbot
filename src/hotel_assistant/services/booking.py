@@ -69,6 +69,13 @@ class BookingWorkflow:
             self._confirmed = False
             raise ValueError("booking details changed; search for rooms again")
 
+    def discard_quote(self) -> None:
+        """Remove the authority to confirm an old quote after an interrupted booking step."""
+        self._snapshot = None
+        self._rooms = []
+        self._quote = None
+        self._confirmed = False
+
     def calculate_price(self, room_id: int) -> PriceQuote:
         self._require_current_search()
         room = next((item for item in self._rooms if item.room_id == room_id), None)

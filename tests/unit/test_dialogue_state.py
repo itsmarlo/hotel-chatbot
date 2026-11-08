@@ -86,7 +86,7 @@ def test_booking_state_loads_required_slots_and_limit_from_config() -> None:
     state = BookingState.from_config(config_path)
 
     assert state.required_slots == ("guest_name", "check_in", "check_out", "guests")
-    assert state.max_turns == 10
+    assert state.max_turns == 30
 
 
 def test_booking_state_rejects_invalid_direct_configuration() -> None:

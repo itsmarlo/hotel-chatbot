@@ -29,6 +29,7 @@ class PipelineDebug(BaseModel):
     model_entities: dict[str, Any] = Field(default_factory=dict)
     proposed_tool: str | None = None
     response_mode: str = "template"
+    llm_status: str = "not_used_for_route"
 
 
 class ChatResponse(BaseModel):

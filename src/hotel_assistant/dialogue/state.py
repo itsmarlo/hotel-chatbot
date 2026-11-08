@@ -27,7 +27,7 @@ class BookingState:
     room_type: str | None = None
     special_request: str | None = None
     turn_count: int = 0
-    max_turns: int = 10
+    max_turns: int = 30
     required_slots: tuple[str, ...] = field(default=_DEFAULT_REQUIRED_SLOTS)
 
     def __post_init__(self) -> None:
@@ -47,7 +47,7 @@ class BookingState:
     def from_config(cls, path: Path) -> BookingState:
         payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         required_slots = tuple(payload["required_slots"])
-        max_turns = payload.get("max_turns", 10)
+        max_turns = payload.get("max_turns", 30)
         return cls(required_slots=required_slots, max_turns=max_turns)
 
     def update(self, **changes: object) -> None:

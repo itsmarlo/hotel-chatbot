@@ -12,7 +12,7 @@ _NAME = re.compile(
     r"([\wÀ-ÿ]+(?:[ '-][\wÀ-ÿ]+){0,3})",
     re.I,
 )
-_BARE_NAME = re.compile(r"[A-Za-zÀ-ÿ]{2,}(?:[ '-][A-Za-zÀ-ÿ]{2,}){1,3}")
+_BARE_NAME = re.compile(r"[A-Za-zÀ-ÿ]{2,}(?:[ '-][A-Za-zÀ-ÿ]{2,}){0,3}")
 _ROOMS = {
     "single": ("single", "einzelzimmer", "individuelle"),
     "double": ("double", "doppelzimmer", "chambre double"),
@@ -47,6 +47,13 @@ def language_of(message: str) -> str:
             "départ",
             "passeport",
             "générateur",
+            "petit-déjeuner",
+            "petit déjeuner",
+            "animaux",
+            "chien",
+            "salle de sport",
+            "stationnement",
+            "connexion",
         )
     ):
         return "fr"
@@ -54,7 +61,8 @@ def language_of(message: str) -> str:
         word in lower
         for word in (
             "hallo", "ich heisse", "mein name", "zimmer", "buchen", "gäste",
-            "ausweis", "strom", "ankunft"
+            "ausweis", "strom", "ankunft", "haustier", "frühstück",
+            "fitnessraum", "parkplatz", "wlan", "spa-bereich", "sport und spa"
         )
     ):
         return "de"
@@ -118,7 +126,7 @@ def contextual_booking_changes(
     return changes
 
 
-def is_booking_request(message: str, state: BookingState, changes: dict[str, object]) -> bool:
+def has_booking_terms(message: str) -> bool:
     lower = message.casefold()
     verbs = (
         "book",
@@ -133,8 +141,12 @@ def is_booking_request(message: str, state: BookingState, changes: dict[str, obj
         "réservation",
         "chambre",
     )
+    return any(re.search(rf"\b{re.escape(word)}\b", lower) for word in verbs)
+
+
+def is_booking_request(message: str, state: BookingState, changes: dict[str, object]) -> bool:
     return (
         bool(changes)
-        or any(re.search(rf"\b{re.escape(word)}\b", lower) for word in verbs)
+        or has_booking_terms(message)
         or any(value is not None for value in state.to_raw_dict().values())
     )

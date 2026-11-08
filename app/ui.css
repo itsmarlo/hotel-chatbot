@@ -186,6 +186,23 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
 .bh-success-card h3 { margin: 0; color: #175f43 !important; font-size: 1rem; overflow-wrap: anywhere; }
 #new-chat { margin: 0 .35rem .35rem; color: var(--bh-primary) !important; border: 1px solid var(--bh-primary) !important; background: var(--bh-white) !important; font-weight: 700; }
 #new-chat:hover { background: var(--bh-lavender) !important; }
+#booking-editor, #pipeline-panel {
+  margin: 0 .35rem .35rem;
+  border: 1px solid var(--bh-line) !important;
+  border-radius: .55rem !important;
+  background: var(--bh-white) !important;
+}
+#booking-editor button { font-weight: 700; }
+.bh-pipeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem 1rem;
+  margin: .3rem 0;
+  font-size: .82rem;
+}
+.bh-pipeline div { min-width: 0; }
+.bh-pipeline dt { color: var(--bh-muted); }
+.bh-pipeline dd { margin: .1rem 0 0; font-weight: 700; overflow-wrap: anywhere; }
 .bh-thinking {
   display: inline-flex;
   align-items: center;
@@ -283,4 +300,5 @@ body, .gradio-container { background: var(--bh-canvas) !important; color-scheme:
   #starter-row button { flex: 1 1 8rem; }
   #send-button { flex-basis: 4.75rem !important; }
   .bh-booking-card dl { grid-template-columns: 1fr; }
+  .bh-pipeline { grid-template-columns: 1fr; }
 }

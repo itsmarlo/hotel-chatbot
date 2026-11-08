@@ -1,5 +1,5 @@
 {
   "required_slots": ["guest_name", "check_in", "check_out", "guests"],
   "optional_slots": ["room_type", "special_request"],
-  "max_turns": 10
+  "max_turns": 30
 }
