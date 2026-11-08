@@ -115,40 +115,6 @@ def booking_card(card: dict[str, str] | None) -> str:
     )
 
 
-def pipeline_card(debug: dict[str, Any]) -> str:
-    """Show application decisions without rendering raw model output as HTML."""
-    extracted = debug.get("extracted_slots", {})
-    fields = ", ".join(
-        f"{key}: {'provided' if key == 'guest_name' else value}"
-        for key, value in extracted.items()
-    ) or "None"
-    llm_status = {
-        "not_used_for_route": "Not used for this step",
-        "not_configured": "No hosted model configured",
-        "fallback": "Verified text used after model fallback",
-        "used": "Hosted model used",
-    }.get(debug.get("llm_status"), "Unknown")
-    rows = (
-        ("Route", debug.get("selected_route")),
-        ("Intent", debug.get("detected_intent")),
-        ("Confidence", debug.get("confidence")),
-        ("Extracted fields", fields),
-        ("Source", ", ".join(debug.get("sources", [])) or "None"),
-        ("Response", debug.get("response_mode")),
-        ("LLM", llm_status),
-        ("Proposed tool", debug.get("proposed_tool")),
-        ("Database action", (
-            "Reservation created" if debug.get("selected_route") == "booking_created" else "None"
-        )),
-    )
-    details = "".join(
-        f"<div><dt>{escape(label)}</dt>"
-        f"<dd>{escape(str(value if value is not None else 'None'))}</dd></div>"
-        for label, value in rows
-    )
-    return f'<dl class="bh-pipeline">{details}</dl>'
-
-
 def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
     """Build a single conversation surface over the guarded chat service."""
     service = chat_service or ChatService()
@@ -166,7 +132,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 gr.update(visible=len(history) <= 1),
                 gr.update(visible=False),
                 gr.update(), gr.update(),
-                *(gr.skip() for _ in range(6)),
+                *(gr.skip() for _ in range(5)),
             )
         if len(message) > 4_000:
             updated_history = [
@@ -180,7 +146,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(), gr.update(),
-                *(gr.skip() for _ in range(6)),
+                *(gr.skip() for _ in range(5)),
             )
         result = service.respond(message, session_id)
         chat_reply = result.message
@@ -215,7 +181,6 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             gr.update(value=quote["check_out"] if quote else ""),
             gr.update(value=int(quote["guests"]) if quote else 1),
             gr.update(value=quote["room_type"] if quote else "Double"),
-            gr.update(value=pipeline_card(result.debug)),
         )
 
     def edit_booking(
@@ -235,7 +200,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                 "Use valid YYYY-MM-DD dates, with checkout after check-in, "
                 "and at least one guest."
             )
-            return tuple(gr.skip() for _ in range(15))
+            return tuple(gr.skip() for _ in range(14))
         update = (
             f"Change my booking to {arrival.isoformat()} to {departure.isoformat()} "
             f"for {int(guests)} guests in a {room_type.lower()} room"
@@ -253,7 +218,7 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
             *fresh_chat(), gr.update(visible=False),
             gr.update(value="", visible=False), gr.update(visible=False),
             gr.update(visible=False), gr.update(value=""), gr.update(value=""),
-            gr.update(value=1), gr.update(value="Double"), gr.update(value=""),
+            gr.update(value=1), gr.update(value="Double"),
         )
 
     with gr.Blocks(title="Bellhob | Beit Zeitouna") as demo:
@@ -341,10 +306,6 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
                         elem_id="message-box",
                     )
                     send = gr.Button("Send", variant="primary", scale=1, elem_id="send-button")
-                with gr.Accordion(
-                    "How Bellhob decided · demo view", open=False, elem_id="pipeline-panel"
-                ):
-                    pipeline = gr.HTML(value="Ask a question to see the decision path.")
             gr.HTML(
                 '<p class="bh-footnote">English · Deutsch · Français '
                 '<span aria-hidden="true">·</span> '
@@ -355,12 +316,10 @@ def create_demo(chat_service: ChatService | None = None) -> gr.Blocks:
         outputs = [
             message, chatbot, session, pending_confirmation, confirm, starters, thinking,
             review, new_chat, editor, edit_check_in, edit_check_out, edit_guests, edit_room,
-            pipeline,
         ]
         reset_outputs = [
             chatbot, message, session, pending_confirmation, confirm, starters, thinking,
             review, new_chat, editor, edit_check_in, edit_check_out, edit_guests, edit_room,
-            pipeline,
         ]
         apply_edit.click(
             edit_booking,

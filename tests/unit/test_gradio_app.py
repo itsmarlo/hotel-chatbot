@@ -10,18 +10,21 @@ from app.gradio_app import (
     confirmation_phrase,
     create_demo,
     fresh_chat,
-    pipeline_card,
 )
 from hotel_assistant.database.repository import HotelRepository
 from hotel_assistant.services.chat import ChatResult, ChatService
 
 
-def test_create_demo_builds_booking_editor_and_demo_trace() -> None:
+def test_create_demo_builds_guest_booking_interface() -> None:
     demo = create_demo()
 
     assert isinstance(demo, gr.Blocks)
     assert any(isinstance(block, gr.Number) for block in demo.blocks.values())
     assert not any(isinstance(block, gr.JSON) for block in demo.blocks.values())
+    assert not any(
+        isinstance(block, gr.Accordion) and block.label == "How Bellhob decided · demo view"
+        for block in demo.blocks.values()
+    )
 
 
 def test_fresh_chat_starts_with_a_welcome_message() -> None:
@@ -133,18 +136,6 @@ def test_invalid_edit_cannot_leave_hidden_quote_confirmable(tmp_path: Path) -> N
     assert invalid.card is None
     assert confirmation.debug["selected_route"] == "clarification"
     assert "search for rooms first" in confirmation.message
-
-
-def test_pipeline_card_escapes_debug_values() -> None:
-    html = pipeline_card({
-        "selected_route": "policy", "detected_intent": "HOTEL_POLICY",
-        "extracted_slots": {"<script>": "ignored"},
-        "sources": ["check-in"], "response_mode": "template",
-    })
-
-    assert "&lt;script&gt;" in html
-    assert "<script>" not in html
-    assert "check-in" in html
 
 
 def test_ui_keeps_review_during_policy_answer_and_updates_edit(tmp_path: Path) -> None:

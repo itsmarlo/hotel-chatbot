@@ -47,7 +47,7 @@ Implemented:
 - synthetic BIO-format NER starter covering all six entity types
 - fixed-split multilingual intent examples, reproducible training, and versioned model artifacts
 - Gradio conversation interface with starter prompts, an editable booking review,
-  guarded quote confirmation, and an optional decision trace for demonstrations
+  and guarded quote confirmation
 - ordered Hugging Face, OpenRouter, and OpenAI reply fallback for grounded policy answers
 - root `app.py` and `requirements.txt` for Hugging Face Spaces
 - unit, ML-data-contract, and integration tests
@@ -196,9 +196,8 @@ displays dates as `DD.MM.YYYY` (for example, `12.06.2027`); ISO dates are also a
 The assistant asks for missing information, quotes an available synthetic room, and only creates
 a reservation after the exact confirmation phrase shown in the chat.
 Once a quote appears, use **Edit stay details** to change its dates, guest count, or room type.
-The quote and confirm control stay visible while you ask a hotel-policy question. Open
-**How Bellhob decided · demo view** to inspect the latest route, extracted fields, policy
-source, and booking action.
+The quote and confirm control stay visible while you ask a hotel-policy question.
+The API retains structured routing and source details for technical evaluation.
 You can ask at least ten questions before confirming, including "Can I bring my dog?",
 "What time is breakfast?", "Is there a gym?", and "When does the spa open?". An
 unsupported hotel question also leaves the pending quote available.
