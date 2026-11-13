@@ -20,7 +20,22 @@ def test_policy_retrieval_returns_authored_answer_and_source() -> None:
 def test_policy_retrieval_declines_unsupported_query() -> None:
     path = Path(__file__).parents[2] / "data" / "knowledge_base" / "policies.json"
     retriever = PolicyRetriever(path)
-    assert retriever.retrieve("Do you offer scuba diving lessons?") is None
+    assert retriever.retrieve("Do you offer helicopter tours?") is None
+
+
+def test_scuba_retrieval_combines_hotel_policy_and_local_provider() -> None:
+    path = Path(__file__).parents[2] / "data" / "knowledge_base" / "policies.json"
+    retriever = PolicyRetriever(path)
+
+    result = retriever.retrieve("Do you offer scuba lessons?", "en")
+
+    assert result is not None
+    assert result.source == "scuba-activities"
+    assert result.kind == "hotel_policy"
+    assert "May through September" in result.answer
+    assert "contact reception" in result.answer
+    assert "https://divinginlebanon.com/courses/try-scuba-diving/" in result.answer
+    assert len(result.sources) == 2
 
 
 def test_multilingual_language_detection_and_name_boundary() -> None:
@@ -28,6 +43,8 @@ def test_multilingual_language_detection_and_name_boundary() -> None:
     assert language_of("Ich heiße Alex Kim") == "de"
     assert language_of("Ich brauche Hilfe") == "de"
     assert language_of("Which room is available?") == "en"
+    assert language_of("Gibt es Tauchkurse?") == "de"
+    assert language_of("Proposez-vous des cours de plongée ?") == "fr"
     assert booking_changes("My name is Alex Kim and I need a room")["guest_name"] == "Alex Kim"
 
 

@@ -54,6 +54,8 @@ def language_of(message: str) -> str:
             "salle de sport",
             "stationnement",
             "connexion",
+            "plongée",
+            "proposez-vous",
         )
     ):
         return "fr"
@@ -62,7 +64,8 @@ def language_of(message: str) -> str:
         for word in (
             "hallo", "ich heisse", "mein name", "zimmer", "buchen", "gäste",
             "ausweis", "strom", "ankunft", "haustier", "frühstück",
-            "fitnessraum", "parkplatz", "wlan", "spa-bereich", "sport und spa"
+            "fitnessraum", "parkplatz", "wlan", "spa-bereich", "sport und spa",
+            "tauch", "gibt es"
         )
     ):
         return "de"

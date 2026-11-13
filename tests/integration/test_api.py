@@ -95,12 +95,30 @@ def test_chat_booking_requires_confirmation(tmp_path: Path) -> None:
         assert repository.count_rows("reservations") == 4
 
 
-def test_chat_declines_unknown_policy_without_source(tmp_path: Path) -> None:
+def test_chat_answers_scuba_question_with_hotel_policy_and_beirut_option(tmp_path: Path) -> None:
     with TestClient(create_app(Settings(database_path=tmp_path / "api.db"))) as client:
         response = client.post("/chat", json={"message": "Do you offer scuba lessons?"})
     assert response.status_code == 200
-    assert response.json()["debug"]["selected_route"] == "unsupported_policy"
-    assert response.json()["debug"]["sources"] == []
+    assert response.json()["debug"]["selected_route"] == "policy"
+    assert response.json()["debug"]["sources"] == ["scuba-activities"]
+    assert "May through September" in response.json()["message"]
+    assert "contact reception" in response.json()["message"]
+    assert "https://divinginlebanon.com/courses/try-scuba-diving/" in response.json()["message"]
+    assert "Source: Hotel policy [scuba-activities]" in response.json()["message"]
+
+
+def test_cancellation_answer_gives_next_steps_without_inventing_refund_terms(
+    tmp_path: Path,
+) -> None:
+    with TestClient(create_app(Settings(database_path=tmp_path / "cancellation.db"))) as client:
+        response = client.post("/chat", json={"message": "What is your cancellation policy?"})
+
+    payload = response.json()
+    assert payload["debug"]["selected_route"] == "policy"
+    assert payload["debug"]["sources"] == ["cancellation"]
+    assert "booking reference, guest name, and stay dates" in payload["message"]
+    assert "confirm the terms that apply" in payload["message"]
+    assert payload["message"].endswith("Source: Hotel policy [cancellation]")
 
 
 def test_unknown_bathroom_question_is_not_treated_as_booking(tmp_path: Path) -> None:
@@ -263,7 +281,12 @@ def test_ten_policy_questions_keep_quote_confirmable(tmp_path: Path) -> None:
         assert answer.card == quote.card
         assert repository.count_rows("reservations") == 3
 
-    unsupported = service.respond("Do you offer scuba lessons?", quote.session_id)
+    scuba = service.respond("Do you offer scuba lessons?", quote.session_id)
+    assert scuba.debug["selected_route"] == "policy"
+    assert scuba.debug["sources"] == ["scuba-activities"]
+    assert scuba.card == quote.card
+
+    unsupported = service.respond("Do you offer helicopter tours?", quote.session_id)
     assert unsupported.debug["selected_route"] == "unsupported_policy"
     assert unsupported.card == quote.card
 

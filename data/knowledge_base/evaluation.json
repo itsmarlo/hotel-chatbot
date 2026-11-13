@@ -47,7 +47,10 @@
   {"question": "Can I park my car?", "language": "en", "source": "parking"},
   {"question": "Gibt es einen Parkplatz?", "language": "de", "source": "parking"},
   {"question": "Y a-t-il un stationnement ?", "language": "fr", "source": "parking"},
-  {"question": "Do you offer scuba lessons?", "language": "en", "source": null},
-  {"question": "Gibt es Tauchkurse?", "language": "de", "source": null},
-  {"question": "Is there a swimming pool?", "language": "en", "source": null}
+  {"question": "Do you offer scuba lessons?", "language": "en", "source": "scuba-activities"},
+  {"question": "Gibt es Tauchkurse?", "language": "de", "source": "scuba-activities"},
+  {"question": "Proposez-vous des cours de plongée ?", "language": "fr", "source": "scuba-activities"},
+  {"question": "Is there a swimming pool?", "language": "en", "source": null},
+  {"question": "Do you offer helicopter tours?", "language": "en", "source": null},
+  {"question": "Can I rent a bicycle from the hotel?", "language": "en", "source": null}
 ]

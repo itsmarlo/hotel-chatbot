@@ -105,7 +105,7 @@ def test_unsupported_question_cannot_become_booking(
     monkeypatch.setenv("HOTEL_NLP_MODE", "qwen")
     repository = HotelRepository(tmp_path / "qwen.db")
     service = ChatService(repository=repository, qwen=StubQwen(proposal()))  # type: ignore[arg-type]
-    result = service.respond("Do you offer scuba lessons?")
+    result = service.respond("Do you offer helicopter tours?")
     assert result.debug["selected_route"] == "unsupported_policy"
     assert repository.count_rows("reservations") == 3
 

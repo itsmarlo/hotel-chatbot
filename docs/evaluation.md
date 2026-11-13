@@ -18,12 +18,15 @@ proposals appear in API debug output and are not used to update reservation stat
 ## Policy retrieval
 
 Run `HOTEL_RAG_MODE=semantic HOTEL_RAG_LOCAL_ONLY=1 python scripts/evaluate_retrieval.py`.
-On 48 supported questions, including fictional amenity questions and seven Beirut sightseeing
-questions, semantic retrieval hits the expected source first on 45 (93.8%). It rejects all three
+On 51 supported questions, including fictional amenity questions, Beirut sightseeing and scuba
+questions, semantic retrieval hits the expected source first on 48 (94.1%). It rejects all three
 unsupported questions in the small retrieval set. On macOS, setting
 `OMP_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false` avoids
 an intermittent local model crash during this run. The same corpus and questions
 were authored for this project, so the result can be optimistic.
+The scuba season is a user-supplied policy for the fictional hotel. The linked Beirut course
+and location come from the independent provider's published pages; current availability is not
+verified by the demo.
 An integration check asks ten policy questions after a quote, verifies that the quote remains
 available and no reservation is written, and then confirms the booking. This is a scripted
 continuity check, not a measured guest-experience result.

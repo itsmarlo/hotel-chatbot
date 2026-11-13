@@ -58,6 +58,38 @@ def test_invalid_policy_reply_tries_next_model_and_keeps_citation(tmp_path: Path
     assert fallback.calls == 1
 
 
+def test_cancellation_answer_is_not_rewritten_by_hosted_model(tmp_path: Path) -> None:
+    backend = StubBackend("hosted", "All bookings are fully refundable.")
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "cancellation_router.db"),
+        answer_generator=ModelRouter([backend]),
+    )
+
+    result = service.respond("What is your cancellation policy?")
+
+    assert result.debug["selected_route"] == "policy"
+    assert result.debug["llm_status"] == "verified_policy"
+    assert "contact reception with your booking reference" in result.message
+    assert "fully refundable" not in result.message
+    assert backend.calls == 0
+
+
+def test_seasonal_scuba_policy_is_not_rewritten_by_hosted_model(tmp_path: Path) -> None:
+    backend = StubBackend("hosted", "Scuba lessons are available all year.")
+    service = ChatService(
+        repository=HotelRepository(tmp_path / "scuba_router.db"),
+        answer_generator=ModelRouter([backend]),
+    )
+
+    result = service.respond("Do you offer scuba lessons?")
+
+    assert result.debug["selected_route"] == "policy"
+    assert result.debug["llm_status"] == "verified_policy"
+    assert "May through September" in result.message
+    assert "all year" not in result.message
+    assert backend.calls == 0
+
+
 def test_router_reports_all_failed_models() -> None:
     router = ModelRouter(
         [StubBackend("one", ValueError("bad")), StubBackend("two", RuntimeError("down"))]

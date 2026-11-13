@@ -27,9 +27,9 @@
     "id": "cancellation",
     "title": "Cancellation",
     "keywords": ["cancel", "cancellation", "refund", "stornierung", "stornieren", "annulation", "annuler", "remboursement"],
-    "en": "This prototype does not process cancellations or refunds. Contact reception directly to request a cancellation.",
-    "de": "Dieser Prototyp bearbeitet keine Stornierungen oder Erstattungen. Bitte wenden Sie sich für eine Stornierung direkt an die Rezeption.",
-    "fr": "Ce prototype ne traite pas les annulations ni les remboursements. Contactez directement la réception pour demander une annulation."
+    "en": "To request a cancellation or ask about a refund, contact reception with your booking reference, guest name, and stay dates. Reception can confirm the terms that apply and the next steps. I can't cancel a booking or issue a refund in this chat.",
+    "de": "Für eine Stornierung oder eine Frage zur Erstattung wenden Sie sich mit Ihrer Buchungsreferenz, dem Namen des Gastes und den Reisedaten an die Rezeption. Dort erfahren Sie, welche Bedingungen gelten und wie es weitergeht. In diesem Chat kann ich keine Buchung stornieren oder Erstattung veranlassen.",
+    "fr": "Pour demander une annulation ou vous renseigner sur un remboursement, contactez la réception avec votre référence de réservation, le nom du client et les dates du séjour. La réception pourra confirmer les conditions applicables et la suite à donner. Je ne peux pas annuler une réservation ni effectuer un remboursement dans ce chat."
   },
   {
     "id": "payment",
@@ -94,6 +94,18 @@
     "en": "Parking is limited and must be requested in advance through reception. This demo cannot reserve a parking space.",
     "de": "Parkplätze sind begrenzt und müssen vorab über die Rezeption angefragt werden. Diese Demo reserviert keinen Parkplatz.",
     "fr": "Les places de stationnement sont limitées et doivent être demandées à l'avance à la réception. Cette démonstration ne réserve pas de place."
+  },
+  {
+    "id": "scuba-activities",
+    "title": "Seasonal scuba diving and local lessons",
+    "keywords": ["scuba", "scuba lessons", "scuba diving", "diving lessons", "tauchkurse", "tauchen", "cours de plongée", "plongée"],
+    "en": "Yes. Beit Zeitouna offers scuba diving activities from May through September. Please contact reception to arrange an appointment and ask about lesson availability. For an independent Beirut option, [Diving in Lebanon](https://divinginlebanon.com/courses/try-scuba-diving/) lists a beginner Try Scuba course. Its [contact page](https://divinginlebanon.com/contacts/) places the club at the Zaytouna Bay yacht entrance. Check current details with the provider; this chat cannot book either activity.",
+    "de": "Ja. Beit Zeitouna bietet von Mai bis September Tauchaktivitäten an. Bitte wenden Sie sich an die Rezeption, um einen Termin zu vereinbaren und nach Tauchkursen zu fragen. Als unabhängige Möglichkeit in Beirut führt [Diving in Lebanon](https://divinginlebanon.com/courses/try-scuba-diving/) einen Try-Scuba-Kurs für Anfänger auf. Die [Kontaktseite](https://divinginlebanon.com/contacts/) nennt den Yachteingang der Zaytouna Bay als Standort. Prüfen Sie aktuelle Details beim Anbieter; dieser Chat kann keine der Aktivitäten buchen.",
+    "fr": "Oui. Beit Zeitouna propose des activités de plongée de mai à septembre. Contactez la réception pour prendre rendez-vous et demander si des cours sont disponibles. À Beyrouth, l'organisme indépendant [Diving in Lebanon](https://divinginlebanon.com/courses/try-scuba-diving/) présente un cours Try Scuba pour débutants. Sa [page de contact](https://divinginlebanon.com/contacts/) situe le club à l'entrée des yachts de Zaytouna Bay. Vérifiez les détails actuels auprès de l'organisme; ce chat ne peut réserver aucune de ces activités.",
+    "sources": [
+      {"label": "Diving in Lebanon course", "url": "https://divinginlebanon.com/courses/try-scuba-diving/"},
+      {"label": "Diving in Lebanon contact", "url": "https://divinginlebanon.com/contacts/"}
+    ]
   },
   {
     "id": "beirut-sightseeing",

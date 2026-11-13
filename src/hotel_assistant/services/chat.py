@@ -40,6 +40,7 @@ _CONFIRM = {
 }
 _DECLINE = {"no", "don't book", "do not book", "cancel request", "nicht buchen", "ne pas réserver"}
 _GENERATIVE_ROUTES = {"policy", "greeting"}
+_VERBATIM_POLICY_SOURCES = {"cancellation", "scuba-activities"}
 _UNSAFE_REPLY = re.compile(
     r"\b(?:booked|reserviert|réservée?|confirmed)\b|"
     r"\b(?:booking|reservation|buchung|réservation)\s+(?:is\s+)?"
@@ -99,17 +100,19 @@ _GUIDANCE_BY_LANGUAGE = {
 }
 _UNKNOWN_POLICY_BY_LANGUAGE = {
     "en": (
-        "I don’t have reliable information on that yet. Please check with reception, "
-        "or ask me about rooms, hotel policies, or Beirut sights."
+        "I can't verify that from the hotel information available to me. "
+        "Please ask reception about your request. I can help with room bookings, hotel policies, "
+        "and Beirut sightseeing ideas."
     ),
     "de": (
-        "Dazu habe ich keine verlässlichen Hotelinformationen. "
-        "Fragen Sie bitte an der Rezeption nach oder stellen Sie mir eine Frage "
-        "zu Zimmern, Hotelregeln oder Beirut."
+        "Ob das Hotel diesen Service anbietet, kann ich nicht bestätigen. "
+        "Bitte fragen Sie an der Rezeption nach. Ich kann Ihnen bei Zimmerbuchungen, "
+        "bestätigten Hotelinformationen und Ausflugsideen für Beirut helfen."
     ),
     "fr": (
-        "Je n’ai pas d’information fiable à ce sujet. Vérifiez auprès de la réception, "
-        "ou demandez-moi des informations sur les chambres, l’hôtel ou Beyrouth."
+        "Je ne peux pas confirmer si l'hôtel propose ce service. "
+        "Veuillez vous renseigner auprès de la réception. Je peux vous aider pour "
+        "les réservations, les informations vérifiées sur l'hôtel et les visites à Beyrouth."
     ),
 }
 
@@ -235,10 +238,20 @@ class ChatService:
         ) -> ChatResult:
             debug["selected_route"] = route
             debug["detected_intent"] = intent
-            debug["llm_status"] = (
-                "not_configured" if self.answer_generator is None else "fallback"
-            ) if route in _GENERATIVE_ROUTES else "not_used_for_route"
-            if self.answer_generator is not None and route in _GENERATIVE_ROUTES:
+            # Keep seasonal availability and cancellation instructions intact;
+            # a hosted model must not invent dates, lessons, or refund terms.
+            should_generate = route in _GENERATIVE_ROUTES and not any(
+                source in _VERBATIM_POLICY_SOURCES for source in debug["sources"]
+            )
+            if should_generate:
+                debug["llm_status"] = (
+                    "not_configured" if self.answer_generator is None else "fallback"
+                )
+            else:
+                debug["llm_status"] = (
+                    "verified_policy" if route == "policy" else "not_used_for_route"
+                )
+            if self.answer_generator is not None and should_generate:
                 # The source citation is application-owned and never entrusted to the LLM.
                 body, separator, citation = text.partition("\n\nSource: ")
                 try:

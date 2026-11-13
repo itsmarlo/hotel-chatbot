@@ -132,9 +132,12 @@ The semantic mode loads a pinned multilingual Sentence-Transformers model and bu
 FAISS index over the policy text. Its first local run downloads model files. The Docker build
 downloads the model once and runs with local files only. Answers return the source policy ID and
 decline questions below the retrieval threshold. On the small, manually authored set in
-`data/knowledge_base/evaluation.json`, semantic Hit@1 is 45/48 (93.8%) and all three unsupported
+`data/knowledge_base/evaluation.json`, semantic Hit@1 is 48/51 (94.1%) and all three unsupported
 questions are declined. This is a development check, not a real-traffic accuracy estimate.
 The amenity details and hours are fictional demonstration content.
+The fictional hotel policy says scuba activities run from May through September and asks guests
+to contact reception for appointments and lesson availability. A separate linked Beirut provider
+offers a beginner course; check that provider's current details before visiting.
 In semantic mode the same encoder also runs the trained intent classifier and advisory BIO
 tagger. The keyword mode works with the base install and skips those models.
 

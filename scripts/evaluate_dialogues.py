@@ -33,7 +33,7 @@ def scenarios() -> list[dict[str, str]]:
                 ("When is check-in?", "check-in"),
                 ("Is a passport required?", "identification"),
             ],
-            "unknown": ["Do you offer scuba lessons?", "Can you arrange a helicopter tour?"],
+            "unknown": ["Do you offer helicopter tours?", "Can you arrange a balloon ride?"],
         },
         "de": {
             "book": (
@@ -48,7 +48,7 @@ def scenarios() -> list[dict[str, str]]:
                 ("Wann ist die Ankunft?", "check-in"),
                 ("Brauche ich einen Reisepass?", "identification"),
             ],
-            "unknown": ["Gibt es Tauchkurse?", "Bieten Sie Hubschrauberrundflüge an?"],
+            "unknown": ["Gibt es Ballonfahrten?", "Bieten Sie Hubschrauberrundflüge an?"],
         },
         "fr": {
             "book": (
@@ -66,7 +66,7 @@ def scenarios() -> list[dict[str, str]]:
                 ("Faut-il un passeport?", "identification"),
             ],
             "unknown": [
-                "Proposez-vous des cours de plongée?",
+                "Proposez-vous des vols en montgolfière ?",
                 "Organisez-vous des vols en hélicoptère?",
             ],
         },
